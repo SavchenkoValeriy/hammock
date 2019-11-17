@@ -1,6 +1,6 @@
 #pragma once
 
-#include "hammock/splay-impl.hpp"
+#include "hammock/impl/splay.hpp"
 #include "hammock/utils/traversal.hpp"
 
 #include <map>
