@@ -12,7 +12,7 @@ template <class NodeType> constexpr inline auto getMemberPointer(Direction To) {
 }
 
 template <Direction To, class NodeType>
-constexpr inline NodeType *getChild(NodeType *X) {
+constexpr inline auto &getChild(NodeType *X) {
   constexpr auto MemberPointer = getMemberPointer<NodeType>(To);
   return X->*MemberPointer;
 }

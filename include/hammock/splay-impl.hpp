@@ -2,6 +2,7 @@
 
 #include "hammock/utils/iterator.hpp"
 #include "hammock/utils/node.hpp"
+#include "hammock/utils/rotation.hpp"
 #include "hammock/utils/traversal.hpp"
 
 namespace hammock::impl {
@@ -22,6 +23,8 @@ public:
 
     WhereTo = alloc(ValueToInsert);
     WhereTo->Parent = Parent;
+
+    splay(WhereTo);
   }
 
   void erase(iterator ToErase) {
@@ -39,7 +42,10 @@ public:
   iterator end() { return {nullptr}; }
 
 private:
-  void splay(Node *NodeToMoveToTheTop) {}
+  void splay(Node *NodeToMoveToTheTop) {
+    utils::splay(NodeToMoveToTheTop);
+    Root = NodeToMoveToTheTop;
+  }
 
   static Node *alloc(const KeyValuePairType &ValueToStore) {
     // TODO: change to allocators

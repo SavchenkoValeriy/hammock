@@ -24,6 +24,20 @@ constexpr inline NodeType *getTheRightmost(NodeType *Node) {
   return getTheOutmost<Direction::Right>(Node);
 }
 
+template <Direction TestedDirection, class NodeType>
+constexpr inline bool isChild(NodeType *Node) {
+  return getChild<TestedDirection>(Node->Parent) == Node;
+}
+
+template <class NodeType>
+constexpr inline auto &getParentLocation(NodeType *Node) {
+  if (isChild<Direction::Right>(Node)) {
+    return Node->Parent->Right;
+  } else {
+    return Node->Parent->Left;
+  }
+}
+
 template <Direction To, class NodeType>
 constexpr inline NodeType *successor(NodeType *Node) {
   constexpr Direction From = invert(To);
@@ -45,6 +59,7 @@ constexpr inline std::pair<NodeType *, NodeType *&> find(NodeType *&Node,
   NodeType **Result = &Node;
   while (*Result != nullptr) {
     Parent = *Result;
+    // TODO: use user-defined comparison operators
     if (Parent->Key() > Key) {
       Result = &Parent->Left;
     } else if (Parent->Key() < Key) {
