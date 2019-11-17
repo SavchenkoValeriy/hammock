@@ -11,7 +11,7 @@ template <class NodeType> constexpr inline auto getMemberPointer(Direction To) {
   return To == Direction::Left ? &NodeType::Left : &NodeType::Right;
 }
 
-template <class NodeType, Direction To>
+template <Direction To, class NodeType>
 constexpr inline NodeType *getChild(NodeType *X) {
   constexpr auto MemberPointer = getMemberPointer<NodeType>(To);
   return X->*MemberPointer;

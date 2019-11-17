@@ -14,11 +14,14 @@ public:
 
   // TODO: change to pair<iterator, bool>
   void insert(const KeyValuePairType &ValueToInsert) {
-    Node *&WhereTo = utils::find(Root, ValueToInsert.first);
+    const auto &[Parent, WhereTo] = utils::find(Root, ValueToInsert.first);
+
     // We have a value with this key already
     if (WhereTo)
       return;
+
     WhereTo = alloc(ValueToInsert);
+    WhereTo->Parent = Parent;
   }
 
   void erase(iterator ToErase) {
@@ -26,11 +29,14 @@ public:
   }
 
   iterator find(const KeyType &Key) {
-    auto *Node = utils::find(Root, Key);
+    [[maybe_unused]] auto [Parent, Node] = utils::find(Root, Key);
     if (Node)
       splay(Node);
     return {Node};
   }
+
+  iterator begin() { return {utils::getTheLeftmost(Root)}; }
+  iterator end() { return {nullptr}; }
 
 private:
   void splay(Node *NodeToMoveToTheTop) {}

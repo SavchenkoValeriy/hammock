@@ -2,9 +2,11 @@
 
 #include "hammock/utils/direction.hpp"
 
+#include <utility>
+
 namespace hammock::utils {
 
-template <class NodeType, Direction To>
+template <Direction To, class NodeType>
 constexpr inline NodeType *getTheOutmost(NodeType *Node) {
   for (auto *Child = getChild<To>(Node); Child != nullptr;
        Node = Child, Child = getChild<To>(Node)) {
@@ -12,7 +14,17 @@ constexpr inline NodeType *getTheOutmost(NodeType *Node) {
   return Node;
 }
 
-template <class NodeType, Direction To>
+template <class NodeType>
+constexpr inline NodeType *getTheLeftmost(NodeType *Node) {
+  return getTheOutmost<Direction::Left>(Node);
+}
+
+template <class NodeType>
+constexpr inline NodeType *getTheRightmost(NodeType *Node) {
+  return getTheOutmost<Direction::Right>(Node);
+}
+
+template <Direction To, class NodeType>
 constexpr inline NodeType *successor(NodeType *Node) {
   constexpr Direction From = invert(To);
   if (getChild<To>(Node) != nullptr) {
@@ -20,24 +32,27 @@ constexpr inline NodeType *successor(NodeType *Node) {
   }
 
   auto *Parent = Node->Parent;
-  for (; Parent != nullptr and getChild<To>(Parent) != Node;
+  for (; Parent != nullptr and getChild<From>(Parent) != Node;
        Node = Parent, Parent = Node->Parent) {
   }
   return Parent;
 }
 
 template <class NodeType, class KeyType>
-constexpr inline NodeType *&find(NodeType *Node, const KeyType &Key) {
-  NodeType *&Result = Node;
-  while (Result != nullptr) {
-    if (Result->Key > Key) {
-      Result = Result->Left;
-    } else if (Result->Key < Key) {
-      Result = Result->Right;
+constexpr inline std::pair<NodeType *, NodeType *&> find(NodeType *&Node,
+                                                         const KeyType &Key) {
+  NodeType *Parent = nullptr;
+  NodeType **Result = &Node;
+  while (*Result != nullptr) {
+    Parent = *Result;
+    if (Parent->Key() > Key) {
+      Result = &Parent->Left;
+    } else if (Parent->Key() < Key) {
+      Result = &Parent->Right;
     } else {
-      return Result;
+      break;
     }
   }
-  return Result;
+  return {Parent, *Result};
 }
 } // end namespace hammock::utils

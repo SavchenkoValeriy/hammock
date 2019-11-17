@@ -6,6 +6,8 @@ namespace hammock {
     template <class Node>
     class Iterator {
     public:
+      Iterator(Node *TreeNode) : CorrespondingNode(TreeNode) {}
+
       Node *operator->() {
         return CorrespondingNode;
       }
@@ -34,6 +36,14 @@ namespace hammock {
         Iterator Copy = *this;
         operator--();
         return Copy;
+      }
+
+      bool operator==(const Iterator<Node> &RHS) const {
+        return CorrespondingNode == RHS.CorrespondingNode;
+      }
+
+      bool operator!=(const Iterator<Node> &RHS) const {
+        return !(*this == RHS);
       }
 
     private:
