@@ -8,12 +8,14 @@ namespace hammock {
     public:
       constexpr Iterator(Node *TreeNode) noexcept : CorrespondingNode(TreeNode) {}
 
-      constexpr Node *operator->() const {
-        return CorrespondingNode;
+      using KeyValuePair = typename Node::Pair;
+
+      constexpr KeyValuePair *operator->() const {
+        return &CorrespondingNode->KeyValuePair;
       }
 
-      constexpr Node &operator*() {
-        return *CorrespondingNode;
+      constexpr KeyValuePair &operator*() {
+        return CorrespondingNode->KeyValuePair;
       }
 
       constexpr Iterator operator++() {
