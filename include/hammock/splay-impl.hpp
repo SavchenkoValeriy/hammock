@@ -15,7 +15,7 @@ public:
 
   // TODO: change to pair<iterator, bool>
   void insert(const KeyValuePairType &ValueToInsert) {
-    const auto &[Parent, WhereTo] = utils::find(Root, ValueToInsert.first);
+    const auto [Parent, WhereTo] = utils::find(Root, ValueToInsert.first);
 
     // We have a value with this key already
     if (WhereTo)
@@ -32,7 +32,7 @@ public:
   }
 
   iterator find(const KeyType &Key) {
-    [[maybe_unused]] auto [Parent, Node] = utils::find(Root, Key);
+    [[maybe_unused]] const auto [Parent, Node] = utils::find(Root, Key);
     if (Node)
       splay(Node);
     return {Node};
