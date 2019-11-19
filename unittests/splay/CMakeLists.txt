@@ -1,0 +1,1 @@
+add_hammock_unittest(SimpleSplayTest simple.cpp)
