@@ -25,6 +25,8 @@ public:
     WhereTo->Parent = Parent;
 
     splay(WhereTo);
+
+    ++Size;
   }
 
   void erase(iterator ToErase) {
@@ -41,6 +43,9 @@ public:
   iterator begin() { return {utils::getTheLeftmost(Root)}; }
   iterator end() { return {nullptr}; }
 
+  std::size_t size() const { return Size; }
+  bool empty() const { return Size == 0; }
+
 private:
   void splay(Node *NodeToMoveToTheTop) {
     utils::splay(NodeToMoveToTheTop);
@@ -53,6 +58,7 @@ private:
   }
 
   Node *Root = nullptr;
+  std::size_t Size = 0;
 };
 
 } // end namespace hammock::impl
