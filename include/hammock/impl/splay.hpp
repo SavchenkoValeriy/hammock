@@ -5,6 +5,8 @@
 #include "hammock/utils/rotation.hpp"
 #include "hammock/utils/traversal.hpp"
 
+#include <stdexcept>
+
 namespace hammock::impl {
 template <class KeyType, class ValueType> class SplayTree {
 public:
@@ -31,6 +33,14 @@ public:
 
   void erase(iterator ToErase) {
     // TODO: implement
+  }
+
+  ValueType &at(const KeyType &Key) {
+    auto it = find(Key);
+    if (it == end()) {
+      throw std::out_of_range("SplayTree::at");
+    }
+    return it->second;
   }
 
   iterator find(const KeyType &Key) {

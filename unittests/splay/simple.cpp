@@ -4,7 +4,7 @@
 
 using namespace hammock::impl;
 
-TEST(SimpleSplayTest, OrderTest) {
+TEST(SplayTest, OrderTest) {
   SplayTree<int, int> Tree;
   unsigned ExpectedSize = 0;
   EXPECT_TRUE(Tree.empty());
@@ -26,4 +26,13 @@ TEST(SimpleSplayTest, OrderTest) {
   }
 
   EXPECT_EQ(Tree.size(), 42);
+}
+
+TEST(SplayTest, AtTest) {
+  SplayTree<int, int> Tree;
+  EXPECT_THROW(Tree.at(10), std::out_of_range);
+  Tree.insert({1, 20});
+  EXPECT_EQ(Tree.at(1), 20);
+  Tree.at(1) = 42;
+  EXPECT_EQ(Tree.at(1), 42);
 }
