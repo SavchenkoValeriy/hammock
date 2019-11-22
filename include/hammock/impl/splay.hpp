@@ -15,6 +15,17 @@ public:
 
   using iterator = utils::Iterator<Node>;
 
+  constexpr SplayTree() noexcept = default;
+  constexpr SplayTree(
+      std::initializer_list<KeyValuePairType> Initializer) noexcept {
+    // TODO: it is a very-very basic version of this insertion
+    // it might need to replace existing values in order to
+    // replicate std::map's behavior
+    for (auto &Pair : Initializer) {
+      insert(Pair);
+    }
+  };
+
   // TODO: change to pair<iterator, bool>
   void insert(const KeyValuePairType &ValueToInsert) {
     const auto [Parent, WhereTo] = utils::find(Root, ValueToInsert.first);

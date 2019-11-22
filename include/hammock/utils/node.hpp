@@ -4,11 +4,9 @@
 
 namespace hammock::utils {
 template <class KeyType, class ValueType> struct Node {
-  using Pair = std::pair<KeyType, ValueType>;
+  using Pair = std::pair<const KeyType, ValueType>;
 
-  Node(const Pair &ToStore) : KeyValuePair(ToStore) {}
-
-  KeyType &Key() { return KeyValuePair.first; }
+  constexpr Node(const Pair &ToStore) noexcept : KeyValuePair(ToStore) {}
 
   const KeyType &Key() const { return KeyValuePair.first; }
 

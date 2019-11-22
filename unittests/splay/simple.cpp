@@ -36,3 +36,13 @@ TEST(SplayTest, AtTest) {
   Tree.at(1) = 42;
   EXPECT_EQ(Tree.at(1), 42);
 }
+
+TEST(SplayTest, InitializationTest) {
+  std::map<int, double> Standard = {{1, 12.2}, {10, 3.6}, {-5, 36.6}};
+  SplayTree<int, double> Tree({{1, 12.2}, {10, 3.6}, {-5, 36.6}});
+
+  auto [StandardIt, TreeIt] =
+      std::mismatch(Standard.begin(), Standard.end(), Tree.begin());
+  EXPECT_EQ(StandardIt, Standard.end());
+  EXPECT_EQ(TreeIt, Tree.end());
+}

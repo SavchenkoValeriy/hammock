@@ -1,56 +1,61 @@
+#pragma once
+
 #include "hammock/utils/traversal.hpp"
 
-namespace hammock {
-  namespace utils {
+#include <iterator>
 
-    template <class Node>
-    class Iterator {
-    public:
-      constexpr Iterator(Node *TreeNode) noexcept : CorrespondingNode(TreeNode) {}
+namespace hammock::utils {
 
-      using KeyValuePair = typename Node::Pair;
+template <class Node> class Iterator {
+public:
+  constexpr Iterator(Node *TreeNode) noexcept : CorrespondingNode(TreeNode) {}
 
-      constexpr KeyValuePair *operator->() const {
-        return &CorrespondingNode->KeyValuePair;
-      }
+  using KeyValuePair = typename Node::Pair;
+  using value_type = KeyValuePair;
+  using reference = KeyValuePair &;
+  using pointer = KeyValuePair *;
 
-      constexpr KeyValuePair &operator*() {
-        return CorrespondingNode->KeyValuePair;
-      }
+  using iterator_category = std::bidirectional_iterator_tag;
+  using difference_type = std::ptrdiff_t;
 
-      constexpr Iterator operator++() {
-        CorrespondingNode = successor<Direction::Right>(CorrespondingNode);
-        return *this;
-      }
+  constexpr pointer operator->() const {
+    return &CorrespondingNode->KeyValuePair;
+  }
 
-      constexpr Iterator operator++(int) {
-        Iterator Copy = *this;
-        operator++();
-        return Copy;
-      }
+  constexpr reference operator*() { return CorrespondingNode->KeyValuePair; }
 
-      constexpr Iterator operator--() {
-        CorrespondingNode = successor<Direction::Left>(CorrespondingNode);
-        return *this;
-      }
+  constexpr Iterator operator++() {
+    CorrespondingNode = successor<Direction::Right>(CorrespondingNode);
+    return *this;
+  }
 
-      constexpr Iterator operator--(int) {
-        Iterator Copy = *this;
-        operator--();
-        return Copy;
-      }
+  constexpr Iterator operator++(int) {
+    Iterator Copy = *this;
+    operator++();
+    return Copy;
+  }
 
-      constexpr bool operator==(const Iterator<Node> &RHS) const {
-        return CorrespondingNode == RHS.CorrespondingNode;
-      }
+  constexpr Iterator operator--() {
+    CorrespondingNode = successor<Direction::Left>(CorrespondingNode);
+    return *this;
+  }
 
-      constexpr bool operator!=(const Iterator<Node> &RHS) const {
-        return !(*this == RHS);
-      }
+  constexpr Iterator operator--(int) {
+    Iterator Copy = *this;
+    operator--();
+    return Copy;
+  }
 
-    private:
-      Node *CorrespondingNode;
-    };
+  constexpr bool operator==(const Iterator<Node> &RHS) const {
+    return CorrespondingNode == RHS.CorrespondingNode;
+  }
 
-  } // end namespace utils
-} // end namespace hammock
+  constexpr bool operator!=(const Iterator<Node> &RHS) const {
+    return !(*this == RHS);
+  }
+
+private:
+  Node *CorrespondingNode;
+};
+
+} // end namespace hammock::utils
