@@ -27,13 +27,12 @@ public:
     }
   };
 
-  // TODO: change to pair<iterator, bool>
-  void insert(const KeyValuePairType &ValueToInsert) {
+  std::pair<iterator, bool> insert(const KeyValuePairType &ValueToInsert) {
     const auto [Parent, WhereTo] = utils::find(Root, ValueToInsert.first);
 
     // We have a value with this key already
     if (WhereTo)
-      return;
+      return {{WhereTo}, false};
 
     WhereTo = alloc(ValueToInsert);
     WhereTo->Parent = Parent;
@@ -41,10 +40,13 @@ public:
     splay(WhereTo);
 
     ++Size;
+
+    return {{Root}, true};
   }
 
   iterator erase(iterator ToErase) {
-    if (ToErase == end()) return ToErase;
+    if (ToErase == end())
+      return ToErase;
 
     auto *NodeToErase = ToErase.CorrespondingNode;
     Node *&WhereToReplace = NodeToErase == Root ? Root : NodeToErase;
@@ -84,7 +86,7 @@ public:
     [[maybe_unused]] const auto [Parent, Node] = utils::find(Root, Key);
     if (Node)
       splay(Node);
-    return {Node};
+    return {Root};
   }
 
   iterator begin() { return {utils::getTheLeftmost(Root)}; }

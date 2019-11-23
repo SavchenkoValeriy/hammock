@@ -83,3 +83,22 @@ TEST(SplayTest, EraseTest) {
   EXPECT_EQ(NewRootKey, 1);
   EXPECT_EQ(NewRootValue, "hello, world!");
 }
+
+TEST(SplayTest, InsertUniqueTest) {
+  SplayTree<int, unsigned> Tree;
+  std::vector Source = {1, 42, 52, 1, 2, 2, 42, 0, -1, 38, 1, 0, 0, 0};
+
+  for (int Element : Source) {
+    if (auto [Iterator, FirstTime] = Tree.insert({Element, 1}); not FirstTime) {
+      ++(Iterator->second);
+    }
+  }
+
+  EXPECT_EQ(Tree.at(0), 4);
+  EXPECT_EQ(Tree.at(-1), 1);
+  EXPECT_EQ(Tree.at(1), 3);
+  EXPECT_EQ(Tree.at(2), 2);
+  EXPECT_EQ(Tree.at(38), 1);
+  EXPECT_EQ(Tree.at(42), 2);
+  EXPECT_EQ(Tree.at(52), 1);
+}
