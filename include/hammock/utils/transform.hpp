@@ -18,7 +18,7 @@ constexpr inline void swap(NodeType *LHS, NodeType *RHS) {
 }
 
 template <class NodeType>
-constexpr inline void replace(NodeType *&Old, NodeType *New) {
+constexpr inline void replace(NodeType *Old, NodeType *New) {
   if (New != nullptr) {
     New->Right = Old->Right;
     New->Left = Old->Left;
@@ -27,7 +27,6 @@ constexpr inline void replace(NodeType *&Old, NodeType *New) {
   if (Old->Parent != nullptr) {
     getParentLocation(Old) = New;
   }
-  Old = New;
 }
 
 } // end namespace hammock::utils

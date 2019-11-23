@@ -6,17 +6,22 @@
 #include "hammock/utils/transform.hpp"
 #include "hammock/utils/traversal.hpp"
 
+#include <memory>
 #include <stdexcept>
 #include <type_traits>
 
 namespace hammock::impl {
-template <class KeyType, class ValueType, class Compare = std::less<KeyType>>
+template <class KeyType, class ValueType, class Compare = std::less<KeyType>,
+          class AllocatorType = std::allocator<std::pair<KeyType, ValueType>>>
 class SplayTree {
 public:
   using Node = utils::Node<KeyType, ValueType>;
   using KeyValuePairType = typename Node::Pair;
+  using NodeAllocatorType = typename std::allocator_traits<
+      AllocatorType>::template rebind_alloc<Node>;
 
   using iterator = utils::Iterator<Node>;
+  using allocator_type = AllocatorType;
 
   static_assert(
       std::is_invocable_v<Compare &, const KeyType &, const KeyType &>,
@@ -45,7 +50,7 @@ public:
     if (WhereTo)
       return {{WhereTo}, false};
 
-    WhereTo = alloc(ValueToInsert);
+    WhereTo = create(ValueToInsert);
     WhereTo->Parent = Parent;
 
     splay(WhereTo);
@@ -59,29 +64,35 @@ public:
     if (ToErase == end())
       return ToErase;
 
-    auto *NodeToErase = ToErase.CorrespondingNode;
-    Node *&WhereToReplace = NodeToErase == Root ? Root : NodeToErase;
+    Node *NodeToErase = ToErase.CorrespondingNode;
+    Node *NodeToReplace = nullptr;
 
     ++ToErase;
     // Check if we have a right sub-tree...
     if (NodeToErase->Right == nullptr) {
       // ...if we don't, we can simply replace the node of
       // interest with its left child.
-      utils::replace(WhereToReplace, NodeToErase->Left);
+      NodeToReplace = NodeToErase->Left;
     } else {
       // ...otherwise the successor of our node is in the right sub-tree.
       // We can swap the node of interest with its successor.
       utils::swap(NodeToErase, ToErase.CorrespondingNode);
       // Successor could've had only the right child (otherwise its
       // left child would've been a successor).
-      //
-      // Even if the right child doesn't exist it is still a valid
-      // replacement.
-      utils::replace(WhereToReplace, NodeToErase->Right);
+      NodeToReplace = NodeToErase->Right;
     }
 
-    dealloc(NodeToErase);
+    // Even if the child doesn't exist it is still a valid replacement.
+    utils::replace(NodeToErase, NodeToReplace);
+
+    // If erased node was the root, we need also replace it
+    if (Root == NodeToErase) {
+      Root = NodeToReplace;
+    }
+
+    destruct(NodeToErase);
     --Size;
+
     return ToErase;
   }
 
@@ -113,19 +124,24 @@ private:
     Root = NodeToMoveToTheTop;
   }
 
-  static Node *alloc(const KeyValuePairType &ValueToStore) {
-    // TODO: change to allocators
-    return new Node(ValueToStore);
+  Node *create(const KeyValuePairType &ValueToStore) {
+    auto *DataChunk =
+        std::allocator_traits<NodeAllocatorType>::allocate(Allocator, 1);
+    std::allocator_traits<NodeAllocatorType>::construct(Allocator, DataChunk,
+                                                        ValueToStore);
+    return DataChunk;
   }
 
-  static void dealloc(Node *ToDealloc) {
-    // TODO: change to allocators
-    delete ToDealloc;
+  void destruct(Node *ToDealloc) {
+    std::allocator_traits<NodeAllocatorType>::destroy(Allocator, ToDealloc);
+    std::allocator_traits<NodeAllocatorType>::deallocate(Allocator, ToDealloc,
+                                                         1);
   }
 
   Node *Root = nullptr;
   std::size_t Size = 0;
   Compare Comparator{};
+  NodeAllocatorType Allocator{};
 };
 
 } // end namespace hammock::impl

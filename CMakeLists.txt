@@ -17,6 +17,9 @@ include(AddHammock)
 # All includes are in include directory
 set(HAMMOCK_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
+set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+
 # Google test
 enable_testing()
 find_package(GTest REQUIRED)
