@@ -3,18 +3,28 @@
 #include "hammock/utils/iterator.hpp"
 #include "hammock/utils/node.hpp"
 #include "hammock/utils/rotation.hpp"
-#include "hammock/utils/traversal.hpp"
 #include "hammock/utils/transform.hpp"
+#include "hammock/utils/traversal.hpp"
 
 #include <stdexcept>
+#include <type_traits>
 
 namespace hammock::impl {
-template <class KeyType, class ValueType> class SplayTree {
+template <class KeyType, class ValueType, class Compare = std::less<KeyType>>
+class SplayTree {
 public:
   using Node = utils::Node<KeyType, ValueType>;
   using KeyValuePairType = typename Node::Pair;
 
   using iterator = utils::Iterator<Node>;
+
+  static_assert(
+      std::is_invocable_v<Compare &, const KeyType &, const KeyType &>,
+      "comparison object must be invocable with two arguments of key type");
+
+  static_assert(
+      std::is_invocable_v<const Compare &, const KeyType &, const KeyType &>,
+      "comparison object must be invocable as const");
 
   constexpr SplayTree() noexcept = default;
   constexpr SplayTree(
@@ -28,7 +38,8 @@ public:
   };
 
   std::pair<iterator, bool> insert(const KeyValuePairType &ValueToInsert) {
-    const auto [Parent, WhereTo] = utils::find(Root, ValueToInsert.first);
+    const auto [Parent, WhereTo] =
+        utils::find(Root, ValueToInsert.first, Comparator);
 
     // We have a value with this key already
     if (WhereTo)
@@ -83,7 +94,8 @@ public:
   }
 
   iterator find(const KeyType &Key) {
-    [[maybe_unused]] const auto [Parent, Node] = utils::find(Root, Key);
+    [[maybe_unused]] const auto [Parent, Node] =
+        utils::find(Root, Key, Comparator);
     if (Node)
       splay(Node);
     return {Root};
@@ -113,6 +125,7 @@ private:
 
   Node *Root = nullptr;
   std::size_t Size = 0;
+  Compare Comparator{};
 };
 
 } // end namespace hammock::impl

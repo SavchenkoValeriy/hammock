@@ -102,3 +102,27 @@ TEST(SplayTest, InsertUniqueTest) {
   EXPECT_EQ(Tree.at(42), 2);
   EXPECT_EQ(Tree.at(52), 1);
 }
+
+struct VerySimpleStruct {
+  int Value = 10;
+};
+
+struct ComparatorForAVerySimpleStruct {
+  bool operator()(const VerySimpleStruct &LHS,
+                  const VerySimpleStruct &RHS) const {
+    return LHS.Value > RHS.Value;
+  }
+};
+
+TEST(SplayTest, CustomComparator) {
+  SplayTree<VerySimpleStruct, double, ComparatorForAVerySimpleStruct> Tree;
+  Tree.insert({{20}, 22.4});
+  Tree.insert({{1}, 36.6});
+  Tree.insert({{}, 0.0});
+
+  int PreviousKeyValue = INT_MAX;
+  for (auto [Key, Value] : Tree) {
+    EXPECT_LT(Key.Value, PreviousKeyValue);
+    PreviousKeyValue = Key.Value;
+  }
+}

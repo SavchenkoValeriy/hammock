@@ -52,18 +52,19 @@ constexpr inline NodeType *successor(NodeType *Node) {
   return Parent;
 }
 
-template <class NodeType, class KeyType>
+template <class NodeType, class KeyType, class Compare>
 constexpr inline std::pair<NodeType *, NodeType *&> find(NodeType *&Node,
-                                                         const KeyType &Key) {
+                                                         const KeyType &Key,
+                                                         Compare Comparator) {
   NodeType *Parent = nullptr;
   NodeType **Result = &Node;
   while (*Result != nullptr) {
     Parent = *Result;
     // TODO: use user-defined comparison operators
-    if (Parent->Key() > Key) {
-      Result = &Parent->Left;
-    } else if (Parent->Key() < Key) {
+    if (Comparator(Parent->Key(), Key)) {
       Result = &Parent->Right;
+    } else if (Comparator(Key, Parent->Key())) {
+      Result = &Parent->Left;
     } else {
       break;
     }
