@@ -4,6 +4,7 @@
 #include "hammock/utils/node.hpp"
 #include "hammock/utils/rotation.hpp"
 #include "hammock/utils/traversal.hpp"
+#include "hammock/utils/transform.hpp"
 
 #include <stdexcept>
 
@@ -42,8 +43,33 @@ public:
     ++Size;
   }
 
-  void erase(iterator ToErase) {
-    // TODO: implement
+  iterator erase(iterator ToErase) {
+    if (ToErase == end()) return ToErase;
+
+    auto *NodeToErase = ToErase.CorrespondingNode;
+    Node *&WhereToReplace = NodeToErase == Root ? Root : NodeToErase;
+
+    ++ToErase;
+    // Check if we have a right sub-tree...
+    if (NodeToErase->Right == nullptr) {
+      // ...if we don't, we can simply replace the node of
+      // interest with its left child.
+      utils::replace(WhereToReplace, NodeToErase->Left);
+    } else {
+      // ...otherwise the successor of our node is in the right sub-tree.
+      // We can swap the node of interest with its successor.
+      utils::swap(NodeToErase, ToErase.CorrespondingNode);
+      // Successor could've had only the right child (otherwise its
+      // left child would've been a successor).
+      //
+      // Even if the right child doesn't exist it is still a valid
+      // replacement.
+      utils::replace(WhereToReplace, NodeToErase->Right);
+    }
+
+    dealloc(NodeToErase);
+    --Size;
+    return ToErase;
   }
 
   ValueType &at(const KeyType &Key) {
@@ -76,6 +102,11 @@ private:
   static Node *alloc(const KeyValuePairType &ValueToStore) {
     // TODO: change to allocators
     return new Node(ValueToStore);
+  }
+
+  static void dealloc(Node *ToDealloc) {
+    // TODO: change to allocators
+    delete ToDealloc;
   }
 
   Node *Root = nullptr;

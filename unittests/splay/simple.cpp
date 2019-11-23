@@ -1,6 +1,7 @@
 #include "hammock/impl/splay.hpp"
 
 #include <gtest/gtest.h>
+#include <iterator>
 
 using namespace hammock::impl;
 
@@ -45,4 +46,40 @@ TEST(SplayTest, InitializationTest) {
       std::mismatch(Standard.begin(), Standard.end(), Tree.begin());
   EXPECT_EQ(StandardIt, Standard.end());
   EXPECT_EQ(TreeIt, Tree.end());
+}
+
+TEST(SplayTest, EraseTest) {
+  SplayTree<int, std::string> Tree = {{1, "hello"}, {3, "world"}, {4, "!"}};
+
+  EXPECT_EQ(Tree.size(), 3);
+  Tree.insert({2, ","});
+  EXPECT_EQ(Tree.size(), 4);
+
+  auto AfterErased = Tree.erase(std::next(Tree.begin(), 2));
+  EXPECT_EQ(Tree.size(), 3);
+  auto [Key, Value] = *AfterErased;
+  EXPECT_EQ(Key, 4);
+  EXPECT_EQ(Value, "!");
+
+  AfterErased = Tree.erase(AfterErased);
+  EXPECT_EQ(Tree.size(), 2);
+  EXPECT_EQ(AfterErased, Tree.end());
+
+  AfterErased = Tree.erase(AfterErased);
+  EXPECT_EQ(Tree.size(), 2);
+  EXPECT_EQ(AfterErased, Tree.end());
+
+  AfterErased = Tree.erase(Tree.begin());
+  EXPECT_EQ(Tree.size(), 1);
+  EXPECT_EQ(AfterErased, Tree.begin());
+
+  AfterErased = Tree.erase(AfterErased);
+  EXPECT_TRUE(Tree.empty());
+  EXPECT_EQ(AfterErased, Tree.end());
+
+  Tree.insert({1, "hello, world!"});
+  EXPECT_EQ(Tree.size(), 1);
+  auto [NewRootKey, NewRootValue] = *Tree.begin();
+  EXPECT_EQ(NewRootKey, 1);
+  EXPECT_EQ(NewRootValue, "hello, world!");
 }

@@ -54,7 +54,7 @@ public:
     return !(*this == RHS);
   }
 
-private:
+  // TODO: figure out how to make it private
   Node *CorrespondingNode;
 };
 
