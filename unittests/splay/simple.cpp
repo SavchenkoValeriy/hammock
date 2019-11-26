@@ -185,3 +185,12 @@ TEST(SplayTest, MoveAssignmentTest) {
   checkKeysIncrease(Copy);
   EXPECT_EQ(Copy.size(), ExpectedSize);
 }
+
+TEST(SplayTest, CountAndContainsTest) {
+  SplayTree<int, int> Tree;
+  Tree.insert({42, 15});
+  EXPECT_TRUE(Tree.contains(42));
+  EXPECT_EQ(Tree.count(42), 1);
+  EXPECT_FALSE(Tree.contains(15));
+  EXPECT_EQ(Tree.count(15), 0);
+}

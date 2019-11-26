@@ -137,6 +137,10 @@ public:
     Size = 0;
   }
 
+  bool contains(const KeyType &Key) { return find(Key) != end(); }
+
+  std::size_t count(const KeyType &Key) { return contains(Key); }
+
   ValueType &at(const KeyType &Key) {
     auto it = find(Key);
     if (it == end()) {
@@ -148,9 +152,11 @@ public:
   iterator find(const KeyType &Key) {
     [[maybe_unused]] const auto [Parent, Node] =
         utils::find(Root, Key, Comparator);
-    if (Node)
+    if (Node) {
       splay(Node);
-    return {Root};
+      return {Root};
+    }
+    return {nullptr};
   }
 
   iterator begin() { return {utils::getTheLeftmost(Root)}; }
