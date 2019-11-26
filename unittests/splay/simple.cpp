@@ -5,8 +5,7 @@
 
 using namespace hammock::impl;
 
-TEST(SplayTest, OrderTest) {
-  SplayTree<int, int> Tree;
+unsigned insertTypicalSequence(SplayTree<int, int> &Tree) {
   unsigned ExpectedSize = 0;
   EXPECT_TRUE(Tree.empty());
 
@@ -19,14 +18,22 @@ TEST(SplayTest, OrderTest) {
     Tree.insert({i * 2 + 1, i});
     EXPECT_EQ(Tree.size(), ++ExpectedSize);
   }
+  return ExpectedSize;
+}
 
+void checkKeysIncrease(SplayTree<int, int> &Tree) {
   int PreviousKey = -1;
   for (auto [Key, Value] : Tree) {
     EXPECT_GT(Key, PreviousKey);
     PreviousKey = Key;
   }
+}
 
-  EXPECT_EQ(Tree.size(), 42);
+TEST(SplayTest, OrderTest) {
+  SplayTree<int, int> Tree;
+  auto ExpectedSize = insertTypicalSequence(Tree);
+  checkKeysIncrease(Tree);
+  EXPECT_EQ(Tree.size(), ExpectedSize);
 }
 
 TEST(SplayTest, AtTest) {
@@ -125,4 +132,56 @@ TEST(SplayTest, CustomComparator) {
     EXPECT_LT(Key.Value, PreviousKeyValue);
     PreviousKeyValue = Key.Value;
   }
+}
+
+TEST(SplayTest, CopyAndClearTest) {
+  SplayTree<int, int> Tree;
+  auto ExpectedSize = insertTypicalSequence(Tree);
+
+  SplayTree<int, int> Copy{Tree};
+  EXPECT_EQ(Copy.size(), Tree.size());
+  Tree.clear();
+  EXPECT_TRUE(Tree.empty());
+  EXPECT_EQ(Copy.size(), ExpectedSize);
+
+  checkKeysIncrease(Copy);
+  EXPECT_EQ(Copy.size(), ExpectedSize);
+}
+
+TEST(SplayTest, MoveTest) {
+  SplayTree<int, int> Tree;
+  auto ExpectedSize = insertTypicalSequence(Tree);
+
+  SplayTree<int, int> Copy{std::move(Tree)};
+  EXPECT_TRUE(Tree.empty());
+  EXPECT_EQ(Copy.size(), ExpectedSize);
+
+  checkKeysIncrease(Copy);
+  EXPECT_EQ(Copy.size(), ExpectedSize);
+}
+
+TEST(SplayTest, CopyAssignmentAndClearTest) {
+  SplayTree<int, int> Tree, Copy;
+  auto ExpectedSize = insertTypicalSequence(Tree);
+  Copy = Tree;
+
+  EXPECT_EQ(Copy.size(), Tree.size());
+  Tree.clear();
+  EXPECT_TRUE(Tree.empty());
+  EXPECT_EQ(Copy.size(), ExpectedSize);
+
+  checkKeysIncrease(Copy);
+  EXPECT_EQ(Copy.size(), ExpectedSize);
+}
+
+TEST(SplayTest, MoveAssignmentTest) {
+  SplayTree<int, int> Tree, Copy;
+  auto ExpectedSize = insertTypicalSequence(Tree);
+
+  Copy = std::move(Tree);
+  EXPECT_TRUE(Tree.empty());
+  EXPECT_EQ(Copy.size(), ExpectedSize);
+
+  checkKeysIncrease(Copy);
+  EXPECT_EQ(Copy.size(), ExpectedSize);
 }

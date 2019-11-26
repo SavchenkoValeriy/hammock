@@ -2,6 +2,7 @@
 
 #include "hammock/utils/direction.hpp"
 
+#include <queue>
 #include <utility>
 
 namespace hammock::utils {
@@ -70,5 +71,62 @@ constexpr inline std::pair<NodeType *, NodeType *&> find(NodeType *&Node,
     }
   }
   return {Parent, *Result};
+}
+
+template <class NodeType, class CallbackType>
+constexpr inline void preOrderTraverse(NodeType *Root, CallbackType Callback) {
+  static_assert(
+      std::is_invocable_v<const CallbackType, NodeType *>,
+      "traversal callback must be invocable with a node pointer argument");
+
+  std::queue<NodeType *> TraversalQueue;
+  TraversalQueue.push(Root);
+
+  while (not TraversalQueue.empty()) {
+    auto *CurrentNode = TraversalQueue.front();
+    TraversalQueue.pop();
+
+    if (CurrentNode == nullptr)
+      continue;
+    TraversalQueue.push(CurrentNode->Left);
+    TraversalQueue.push(CurrentNode->Right);
+
+    Callback(CurrentNode);
+  }
+}
+
+template <Direction To, class NodeType>
+constexpr inline bool shouldGo(NodeType *Origin, NodeType *Copy) {
+  return getChild<To>(Origin) != nullptr and getChild<To>(Copy) == nullptr;
+}
+
+template <Direction To, class NodeType, class CallbackType>
+constexpr inline void copyAndGo(NodeType *&Origin, NodeType *&Copy,
+                                CallbackType Create) {
+  getChild<To>(Copy) = Create(*getChild<To>(Origin));
+  getChild<To>(Copy)->Parent = Copy;
+  Origin = getChild<To>(Origin);
+  Copy = getChild<To>(Copy);
+}
+
+template <class NodeType, class CallbackType>
+constexpr inline NodeType *copyTree(NodeType *Origin, CallbackType Create) {
+  if (Origin == nullptr)
+    return nullptr;
+
+  auto *Root = Create(*Origin), *Copy = Root;
+
+  while (Origin != nullptr) {
+    if (shouldGo<Direction::Left>(Origin, Copy)) {
+      copyAndGo<Direction::Left>(Origin, Copy, Create);
+    } else if (shouldGo<Direction::Right>(Origin, Copy)) {
+      copyAndGo<Direction::Right>(Origin, Copy, Create);
+    } else {
+      Origin = Origin->Parent;
+      Copy = Copy->Parent;
+    }
+  }
+
+  return Root;
 }
 } // end namespace hammock::utils

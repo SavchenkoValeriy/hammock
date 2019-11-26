@@ -31,9 +31,7 @@ public:
       std::is_invocable_v<const Compare &, const KeyType &, const KeyType &>,
       "comparison object must be invocable as const");
 
-  constexpr SplayTree() noexcept = default;
-  constexpr SplayTree(
-      std::initializer_list<KeyValuePairType> Initializer) noexcept {
+  SplayTree(std::initializer_list<KeyValuePairType> Initializer) noexcept {
     // TODO: it is a very-very basic version of this insertion
     // it might need to replace existing values in order to
     // replicate std::map's behavior
@@ -41,6 +39,42 @@ public:
       insert(Pair);
     }
   };
+
+  constexpr SplayTree() noexcept = default;
+
+  SplayTree(SplayTree &&Origin) noexcept
+      : Root{std::exchange(Origin.Root, nullptr)}, Size{std::exchange(
+                                                       Origin.Size, 0)},
+        Comparator{Origin.Comparator}, Allocator{Origin.Allocator} {}
+
+  SplayTree(const SplayTree &Origin)
+      : Size{Origin.Size},
+        Comparator{Origin.Comparator}, Allocator{Origin.Allocator} {
+    Root = copyTree(Origin.Root);
+  }
+
+  SplayTree &operator=(const SplayTree &Origin) {
+    if (this != &Origin) {
+      // unlike the case with copy construction we might
+      // actually have some data in this tree, we need to clear it
+      clear();
+      Root = copyTree(Origin.Root);
+      Size = Origin.Size;
+      Comparator = Origin.Comparator;
+      Allocator = Origin.Allocator;
+    }
+    return *this;
+  }
+
+  SplayTree &operator=(SplayTree &&Origin) noexcept {
+    Root = std::exchange(Origin.Root, nullptr);
+    Size = std::exchange(Origin.Size, 0);
+    Comparator = Origin.Comparator;
+    Allocator = Origin.Allocator;
+    return *this;
+  }
+
+  ~SplayTree() noexcept { clear(); }
 
   std::pair<iterator, bool> insert(const KeyValuePairType &ValueToInsert) {
     const auto [Parent, WhereTo] =
@@ -96,6 +130,13 @@ public:
     return ToErase;
   }
 
+  void clear() noexcept {
+    utils::preOrderTraverse(Root,
+                            [this](Node *ToDelete) { destruct(ToDelete); });
+    Root = nullptr;
+    Size = 0;
+  }
+
   ValueType &at(const KeyType &Key) {
     auto it = find(Key);
     if (it == end()) {
@@ -124,11 +165,17 @@ private:
     Root = NodeToMoveToTheTop;
   }
 
-  Node *create(const KeyValuePairType &ValueToStore) {
+  Node *copyTree(Node *Origin) {
+    return utils::copyTree(
+        Origin, [this](const Node &ToCopy) { return create(ToCopy); });
+  }
+
+  template <class... ArgsTypes>
+  [[nodiscard]] Node *create(ArgsTypes &&... Args) {
     auto *DataChunk =
         std::allocator_traits<NodeAllocatorType>::allocate(Allocator, 1);
-    std::allocator_traits<NodeAllocatorType>::construct(Allocator, DataChunk,
-                                                        ValueToStore);
+    std::allocator_traits<NodeAllocatorType>::construct(
+        Allocator, DataChunk, std::forward<ArgsTypes>(Args)...);
     return DataChunk;
   }
 
