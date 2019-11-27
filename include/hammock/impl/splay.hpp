@@ -20,7 +20,7 @@ public:
   using NodeAllocatorType = typename std::allocator_traits<
       AllocatorType>::template rebind_alloc<Node>;
 
-  using iterator = utils::Iterator<Node>;
+  using iterator = utils::Iterator<SplayTree>;
   using allocator_type = AllocatorType;
 
   static_assert(

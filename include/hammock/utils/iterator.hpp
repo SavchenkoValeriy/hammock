@@ -6,8 +6,9 @@
 
 namespace hammock::utils {
 
-template <class Node> class Iterator {
+template <class Tree> class Iterator {
 public:
+  using Node = typename Tree::Node;
   constexpr Iterator(Node *TreeNode) noexcept : CorrespondingNode(TreeNode) {}
 
   using KeyValuePair = typename Node::Pair;
@@ -46,15 +47,16 @@ public:
     return Copy;
   }
 
-  constexpr bool operator==(const Iterator<Node> &RHS) const {
+  constexpr bool operator==(const Iterator<Tree> &RHS) const {
     return CorrespondingNode == RHS.CorrespondingNode;
   }
 
-  constexpr bool operator!=(const Iterator<Node> &RHS) const {
+  constexpr bool operator!=(const Iterator<Tree> &RHS) const {
     return !(*this == RHS);
   }
 
-  // TODO: figure out how to make it private
+private:
+  friend Tree;
   Node *CorrespondingNode;
 };
 
