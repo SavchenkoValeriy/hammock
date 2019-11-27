@@ -21,6 +21,7 @@ public:
       AllocatorType>::template rebind_alloc<Node>;
 
   using iterator = utils::Iterator<SplayTree>;
+  using const_iterator = utils::Iterator<SplayTree, true>;
   using allocator_type = AllocatorType;
 
   static_assert(
@@ -161,6 +162,8 @@ public:
 
   iterator begin() { return {utils::getTheLeftmost(Root)}; }
   iterator end() { return {nullptr}; }
+  const_iterator begin() const { return {utils::getTheLeftmost(Root)}; }
+  const_iterator end() const { return {nullptr}; }
 
   std::size_t size() const { return Size; }
   bool empty() const { return Size == 0; }

@@ -21,9 +21,9 @@ unsigned insertTypicalSequence(SplayTree<int, int> &Tree) {
   return ExpectedSize;
 }
 
-void checkKeysIncrease(SplayTree<int, int> &Tree) {
+void checkKeysIncrease(const SplayTree<int, int> &Tree) {
   int PreviousKey = -1;
-  for (auto [Key, Value] : Tree) {
+  for (const auto [Key, Value] : Tree) {
     EXPECT_GT(Key, PreviousKey);
     PreviousKey = Key;
   }
