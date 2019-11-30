@@ -16,6 +16,8 @@ template <class KeyType, class ValueType, class Compare = std::less<KeyType>,
 class SplayTree {
 public:
   using Node = utils::Node<KeyType, ValueType>;
+  using CompressedNode = typename Node::Header;
+  using HeaderType = CompressedNode;
   using KeyValuePairType = typename Node::Pair;
   using NodeAllocatorType = typename std::allocator_traits<
       AllocatorType>::template rebind_alloc<Node>;
@@ -44,14 +46,24 @@ public:
   constexpr SplayTree() noexcept = default;
 
   SplayTree(SplayTree &&Origin) noexcept
-      : Root{std::exchange(Origin.Root, nullptr)}, Size{std::exchange(
-                                                       Origin.Size, 0)},
-        Comparator{Origin.Comparator}, Allocator{Origin.Allocator} {}
+      : Header{true}, Size{std::exchange(Origin.Size, 0)},
+        Comparator{Origin.Comparator}, Allocator{Origin.Allocator} {
+    moveHeader(std::move(Origin.Header));
+  }
 
   SplayTree(const SplayTree &Origin)
       : Size{Origin.Size},
         Comparator{Origin.Comparator}, Allocator{Origin.Allocator} {
-    Root = copyTree(Origin.Root);
+    Header = copyTree(Origin.Header);
+  }
+
+  void moveHeader(HeaderType &&Origin) noexcept {
+    Header.Parent = std::exchange(Origin.Parent, nullptr);
+    Header.Left = std::exchange(Origin.Left, nullptr);
+    Header.Right = std::exchange(Origin.Right, nullptr);
+    if (Header.Parent != nullptr) {
+      Header.Parent->Parent = &Header;
+    }
   }
 
   SplayTree &operator=(const SplayTree &Origin) {
@@ -59,7 +71,7 @@ public:
       // unlike the case with copy construction we might
       // actually have some data in this tree, we need to clear it
       clear();
-      Root = copyTree(Origin.Root);
+      Header = copyTree(Origin.Header);
       Size = Origin.Size;
       Comparator = Origin.Comparator;
       Allocator = Origin.Allocator;
@@ -68,7 +80,7 @@ public:
   }
 
   SplayTree &operator=(SplayTree &&Origin) noexcept {
-    Root = std::exchange(Origin.Root, nullptr);
+    moveHeader(std::move(Origin.Header));
     Size = std::exchange(Origin.Size, 0);
     Comparator = Origin.Comparator;
     Allocator = Origin.Allocator;
@@ -78,28 +90,37 @@ public:
   ~SplayTree() noexcept { clear(); }
 
   std::pair<iterator, bool> insert(const KeyValuePairType &ValueToInsert) {
-    const auto [Parent, WhereTo] =
-        utils::find(Root, ValueToInsert.first, Comparator);
+    auto *Root = getRoot();
 
-    // We have a value with this key already
-    if (WhereTo)
-      return {{WhereTo}, false};
+    if (Root == nullptr) {
+      assignRoot(create(ValueToInsert));
+      getRoot()->Parent = &Header;
 
-    WhereTo = create(ValueToInsert);
-    WhereTo->Parent = Parent;
+    } else {
 
-    splay(WhereTo);
+      const auto [Parent, WhereTo] =
+          utils::find(Root, ValueToInsert.first, Comparator);
+
+      // We have a value with this key already
+      if (WhereTo)
+        return {{WhereTo}, false};
+
+      WhereTo = create(ValueToInsert);
+      WhereTo->Parent = Parent;
+
+      splay(WhereTo);
+    }
 
     ++Size;
 
-    return {{Root}, true};
+    return {{getRoot()}, true};
   }
 
   iterator erase(iterator ToErase) {
     if (ToErase == end())
       return ToErase;
 
-    Node *NodeToErase = ToErase.CorrespondingNode;
+    Node *NodeToErase = ToErase.getNode();
     Node *NodeToReplace = nullptr;
 
     ++ToErase;
@@ -111,7 +132,7 @@ public:
     } else {
       // ...otherwise the successor of our node is in the right sub-tree.
       // We can swap the node of interest with its successor.
-      utils::swap(NodeToErase, ToErase.CorrespondingNode);
+      utils::swap(NodeToErase, ToErase.getNode());
       // Successor could've had only the right child (otherwise its
       // left child would've been a successor).
       NodeToReplace = NodeToErase->Right;
@@ -121,8 +142,8 @@ public:
     utils::replace(NodeToErase, NodeToReplace);
 
     // If erased node was the root, we need also replace it
-    if (Root == NodeToErase) {
-      Root = NodeToReplace;
+    if (getRoot() == NodeToErase) {
+      assignRoot(NodeToReplace);
     }
 
     destruct(NodeToErase);
@@ -132,9 +153,9 @@ public:
   }
 
   void clear() noexcept {
-    utils::preOrderTraverse(Root,
+    utils::preOrderTraverse(getRoot(),
                             [this](Node *ToDelete) { destruct(ToDelete); });
-    Root = nullptr;
+    assignRoot(nullptr);
     Size = 0;
   }
 
@@ -151,30 +172,36 @@ public:
   }
 
   iterator find(const KeyType &Key) {
-    [[maybe_unused]] const auto [Parent, Node] =
-        utils::find(Root, Key, Comparator);
-    if (Node) {
-      splay(Node);
-      return {Root};
+    auto *Root = getRoot();
+
+    if (Root != nullptr) {
+
+      [[maybe_unused]] const auto [Parent, Node] =
+          utils::find(getRoot(), Key, Comparator);
+      if (Node) {
+        splay(Node);
+        return {getRoot()};
+      }
     }
-    return {nullptr};
+
+    return end();
   }
 
-  iterator begin() { return {utils::getTheLeftmost(Root)}; }
-  iterator end() { return {nullptr}; }
-  const_iterator begin() const { return {utils::getTheLeftmost(Root)}; }
-  const_iterator end() const { return {nullptr}; }
+  iterator begin() { return {getTheLeftmostNode(this)}; }
+  iterator end() { return {&Header}; }
+  const_iterator begin() const { return {getTheLeftmostNode(this)}; }
+  const_iterator end() const { return {&Header}; }
 
   std::size_t size() const { return Size; }
   bool empty() const { return Size == 0; }
 
 private:
-  void splay(Node *NodeToMoveToTheTop) {
+  void splay(CompressedNode *NodeToMoveToTheTop) {
     utils::splay(NodeToMoveToTheTop);
-    Root = NodeToMoveToTheTop;
+    assignRoot(NodeToMoveToTheTop);
   }
 
-  Node *copyTree(Node *Origin) {
+  HeaderType copyTree(const HeaderType &Origin) {
     return utils::copyTree(
         Origin, [this](const Node &ToCopy) { return create(ToCopy); });
   }
@@ -194,7 +221,18 @@ private:
                                                          1);
   }
 
-  Node *Root = nullptr;
+  Node *getRoot() { return Header.getRoot(); }
+  void assignRoot(CompressedNode *NewRoot) { Header.Parent = NewRoot; }
+
+  template <class ThisPointer>
+  static auto *getTheLeftmostNode(ThisPointer Pointer) {
+    return Pointer->Header.Parent == nullptr
+               ? &Pointer->Header
+               // TODO: change to Header.Left
+               : utils::getTheLeftmost(Pointer->Header.Parent);
+  }
+
+  HeaderType Header{true};
   std::size_t Size = 0;
   Compare Comparator{};
   NodeAllocatorType Allocator{};

@@ -1,7 +1,9 @@
 #pragma once
 
 #include "hammock/utils/direction.hpp"
+#include "hammock/utils/node.hpp"
 
+#include <cassert>
 #include <queue>
 #include <utility>
 
@@ -42,30 +44,35 @@ constexpr inline auto &getParentLocation(NodeType *Node) {
 template <Direction To, class NodeType>
 constexpr inline NodeType *successor(NodeType *Node) {
   constexpr Direction From = invert(To);
+
   if (getChild<To>(Node) != nullptr) {
     return getTheOutmost<From>(getChild<To>(Node));
   }
 
   auto *Parent = Node->Parent;
-  for (; Parent != nullptr and getChild<From>(Parent) != Node;
-       Node = Parent, Parent = Node->Parent) {
+  for (; getChild<From>(Parent) != Node; Node = Parent, Parent = Node->Parent) {
   }
   return Parent;
 }
 
 template <class NodeType, class KeyType, class Compare>
-constexpr inline std::pair<NodeType *, NodeType *&> find(NodeType *&Node,
-                                                         const KeyType &Key,
-                                                         Compare Comparator) {
+constexpr inline std::pair<NodeType *, NodeType *&>
+find(NodeType *Node, const KeyType &Key, Compare Comparator) {
+  assert(("The node to start the search from should not be null" &&
+          Node != nullptr));
+
   NodeType *Parent = nullptr;
   NodeType **Result = &Node;
+
   while (*Result != nullptr) {
     Parent = *Result;
-    // TODO: use user-defined comparison operators
+
     if (Comparator(Parent->Key(), Key)) {
       Result = &Parent->Right;
+
     } else if (Comparator(Key, Parent->Key())) {
       Result = &Parent->Left;
+
     } else {
       break;
     }
@@ -79,6 +86,7 @@ constexpr inline void preOrderTraverse(NodeType *Root, CallbackType Callback) {
       std::is_invocable_v<const CallbackType, NodeType *>,
       "traversal callback must be invocable with a node pointer argument");
 
+  // TODO: get rid of the queue, there is no need in it
   std::queue<NodeType *> TraversalQueue;
   TraversalQueue.push(Root);
 
@@ -96,12 +104,12 @@ constexpr inline void preOrderTraverse(NodeType *Root, CallbackType Callback) {
 }
 
 template <Direction To, class NodeType>
-constexpr inline bool shouldGo(NodeType *Origin, NodeType *Copy) {
+constexpr inline bool shouldGo(const NodeType *Origin, const NodeType *Copy) {
   return getChild<To>(Origin) != nullptr and getChild<To>(Copy) == nullptr;
 }
 
 template <Direction To, class NodeType, class CallbackType>
-constexpr inline void copyAndGo(NodeType *&Origin, NodeType *&Copy,
+constexpr inline void copyAndGo(const NodeType *&Origin, NodeType *&Copy,
                                 CallbackType Create) {
   getChild<To>(Copy) = Create(*getChild<To>(Origin));
   getChild<To>(Copy)->Parent = Copy;
@@ -110,23 +118,31 @@ constexpr inline void copyAndGo(NodeType *&Origin, NodeType *&Copy,
 }
 
 template <class NodeType, class CallbackType>
-constexpr inline NodeType *copyTree(NodeType *Origin, CallbackType Create) {
-  if (Origin == nullptr)
-    return nullptr;
+constexpr inline NodeBase<NodeType>
+copyTree(const NodeBase<NodeType> &OriginalHeader, CallbackType Create) {
+  const auto *OriginRoot = OriginalHeader.getRoot();
 
-  auto *Root = Create(*Origin), *Copy = Root;
+  if (OriginRoot == nullptr) {
+    return {};
+  }
 
-  while (Origin != nullptr) {
+  auto NewHeader = NodeBase<NodeType>{true};
+  NodeBase<NodeType> *Copy = Create(*OriginRoot);
+  const NodeBase<NodeType> *Origin = OriginRoot;
+
+  while (not Origin->isHeader()) {
     if (shouldGo<Direction::Left>(Origin, Copy)) {
       copyAndGo<Direction::Left>(Origin, Copy, Create);
+
     } else if (shouldGo<Direction::Right>(Origin, Copy)) {
       copyAndGo<Direction::Right>(Origin, Copy, Create);
+
     } else {
       Origin = Origin->Parent;
       Copy = Copy->Parent;
     }
   }
 
-  return Root;
+  return NewHeader;
 }
 } // end namespace hammock::utils
