@@ -45,12 +45,40 @@ template <Direction To, class NodeType>
 constexpr inline NodeType *successor(NodeType *Node) {
   constexpr Direction From = invert(To);
 
+  // This case is here specifically for decrementing the end() iterator.
+  //
+  // If we are in the header node, we should start the traversing from
+  // the very beginning, i.e. from the outmost leaf in the 'From' direction.
+  //
+  // It might be included in Direction::Right case, but we assume that
+  // incrementing the end() iterator shouldn't happen at all and we can
+  // save an additional check for that matter.
+  if constexpr (To == Direction::Left) {
+    if (Node->isHeader()) {
+      // TODO: change to Node->Right
+      return getTheOutmost<From>(Node->getRoot());
+    }
+  }
+
+  // If there is a sub-tree in a direction of traversal, we should
+  // definitely go there...
   if (getChild<To>(Node) != nullptr) {
+    // ...starting from the closest node
     return getTheOutmost<From>(getChild<To>(Node));
   }
 
+  // Otherwise we should try our best higher in the tree.
   auto *Parent = Node->Parent;
-  for (; getChild<To>(Parent) == Node; Node = Parent, Parent = Node->Parent) {
+  // If we come to the parent from the direction 'To', we are done with
+  // sub-tree and we should keep going up.
+  //
+  // If we came from the 'From' direction, it is the right time to visit
+  // this parent (in terms of inorder traversal).
+  //
+  // This loop is not infinite as every tree is guaranteed to have a header,
+  // which we'll be the parent of the root node.
+  for (; getChild<To>(Parent) == Node and not Parent->isHeader();
+       Node = Parent, Parent = Node->Parent) {
   }
   return Parent;
 }

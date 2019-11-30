@@ -197,3 +197,19 @@ TEST(SplayTest, CountAndContainsTest) {
   EXPECT_FALSE(Tree.contains(15));
   EXPECT_EQ(Tree.count(15), 0);
 }
+
+TEST(SplayTest, ReverseIteratorTest) {
+  SplayTree<int, int> Tree;
+  auto ExpectedSize = insertTypicalSequence(Tree);
+  Tree.insert({-10, 10});
+
+  int PreviousKey = INT_MAX;
+  unsigned NumberOfVisited = 0;
+  for (auto It = Tree.rbegin(), End = Tree.rend(); It != End; ++It) {
+    auto [Key, Value] = *It;
+    EXPECT_LT(Key, PreviousKey);
+    PreviousKey = Key;
+    ++NumberOfVisited;
+  }
+  EXPECT_EQ(NumberOfVisited, Tree.size());
+}

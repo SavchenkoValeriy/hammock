@@ -6,6 +6,7 @@
 #include "hammock/utils/transform.hpp"
 #include "hammock/utils/traversal.hpp"
 
+#include <iterator>
 #include <memory>
 #include <stdexcept>
 #include <type_traits>
@@ -23,7 +24,10 @@ public:
       AllocatorType>::template rebind_alloc<Node>;
 
   using iterator = utils::Iterator<SplayTree>;
+  using reverse_iterator = std::reverse_iterator<iterator>;
   using const_iterator = utils::Iterator<SplayTree, true>;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
   using allocator_type = AllocatorType;
 
   static_assert(
@@ -46,7 +50,7 @@ public:
   constexpr SplayTree() noexcept = default;
 
   SplayTree(SplayTree &&Origin) noexcept
-      : Header{true}, Size{std::exchange(Origin.Size, 0)},
+      : Size{std::exchange(Origin.Size, 0)},
         Comparator{Origin.Comparator}, Allocator{Origin.Allocator} {
     moveHeader(std::move(Origin.Header));
   }
@@ -191,6 +195,15 @@ public:
   iterator end() { return {&Header}; }
   const_iterator begin() const { return {getTheLeftmostNode(this)}; }
   const_iterator end() const { return {&Header}; }
+
+  reverse_iterator rbegin() { return reverse_iterator(end()); }
+  reverse_iterator rend() { return reverse_iterator(begin()); }
+  const_reverse_iterator rbegin() const {
+    return const_reverse_iterator(end());
+  }
+  const_reverse_iterator rend() const {
+    return const_reverse_iterator(begin());
+  }
 
   std::size_t size() const { return Size; }
   bool empty() const { return Size == 0; }

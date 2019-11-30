@@ -26,7 +26,7 @@ constexpr inline NodeType *rotate(NodeType *Node) {
   auto &Parent = Node->Parent;
   NewTop->Parent = Parent;
 
-  if (Parent) {
+  if (not Parent->isHeader()) {
     getParentLocation(Node) = NewTop;
   }
 
