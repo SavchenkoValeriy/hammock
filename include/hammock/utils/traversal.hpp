@@ -50,7 +50,7 @@ constexpr inline NodeType *successor(NodeType *Node) {
   }
 
   auto *Parent = Node->Parent;
-  for (; getChild<From>(Parent) != Node; Node = Parent, Parent = Node->Parent) {
+  for (; getChild<To>(Parent) == Node; Node = Parent, Parent = Node->Parent) {
   }
   return Parent;
 }
@@ -129,6 +129,7 @@ copyTree(const NodeBase<NodeType> &OriginalHeader, CallbackType Create) {
   auto NewHeader = NodeBase<NodeType>{true};
   NodeBase<NodeType> *Copy = Create(*OriginRoot);
   const NodeBase<NodeType> *Origin = OriginRoot;
+  NewHeader.Parent = Copy;
 
   while (not Origin->isHeader()) {
     if (shouldGo<Direction::Left>(Origin, Copy)) {

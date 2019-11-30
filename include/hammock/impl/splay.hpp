@@ -54,7 +54,7 @@ public:
   SplayTree(const SplayTree &Origin)
       : Size{Origin.Size},
         Comparator{Origin.Comparator}, Allocator{Origin.Allocator} {
-    Header = copyTree(Origin.Header);
+    copyTree(Origin.Header);
   }
 
   void moveHeader(HeaderType &&Origin) noexcept {
@@ -71,7 +71,7 @@ public:
       // unlike the case with copy construction we might
       // actually have some data in this tree, we need to clear it
       clear();
-      Header = copyTree(Origin.Header);
+      copyTree(Origin.Header);
       Size = Origin.Size;
       Comparator = Origin.Comparator;
       Allocator = Origin.Allocator;
@@ -201,9 +201,12 @@ private:
     assignRoot(NodeToMoveToTheTop);
   }
 
-  HeaderType copyTree(const HeaderType &Origin) {
-    return utils::copyTree(
+  void copyTree(const HeaderType &Origin) {
+    Header = utils::copyTree(
         Origin, [this](const Node &ToCopy) { return create(ToCopy); });
+    if (Header.Parent) {
+      Header.Parent->Parent = &Header;
+    }
   }
 
   template <class... ArgsTypes>

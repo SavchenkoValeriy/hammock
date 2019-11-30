@@ -22,11 +22,14 @@ unsigned insertTypicalSequence(SplayTree<int, int> &Tree) {
 }
 
 void checkKeysIncrease(const SplayTree<int, int> &Tree) {
-  int PreviousKey = -1;
+  int PreviousKey = INT_MIN;
+  unsigned NumberOfVisited = 0;
   for (const auto [Key, Value] : Tree) {
     EXPECT_GT(Key, PreviousKey);
     PreviousKey = Key;
+    ++NumberOfVisited;
   }
+  EXPECT_EQ(NumberOfVisited, Tree.size());
 }
 
 TEST(SplayTest, OrderTest) {
