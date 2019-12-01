@@ -54,8 +54,11 @@ TEST(SplayTest, InitializationTest) {
 
   auto [StandardIt, TreeIt] =
       std::mismatch(Standard.begin(), Standard.end(), Tree.begin());
-  EXPECT_EQ(StandardIt, Standard.end());
-  EXPECT_EQ(TreeIt, Tree.end());
+  EXPECT_EQ(StandardIt, Standard.end())
+      << "Found mismatch at " << StandardIt->first << " : "
+      << StandardIt->second;
+  EXPECT_EQ(TreeIt, Tree.end())
+      << "Found mismatch at " << TreeIt->first << " : " << TreeIt->second;
 }
 
 TEST(SplayTest, EraseTest) {

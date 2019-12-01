@@ -98,7 +98,10 @@ public:
 
     if (Root == nullptr) {
       assignRoot(create(ValueToInsert));
-      getRoot()->Parent = &Header;
+      Root = getRoot();
+      Root->Parent = &Header;
+      Header.Left = Root;
+      Header.Right = Root;
 
     } else {
 
@@ -112,12 +115,21 @@ public:
       WhereTo = create(ValueToInsert);
       WhereTo->Parent = Parent;
 
+      // The new node could've become the left/rightmost node
+      // in the tree and we need to make an adjustment to the
+      // shortcuts.
+      //
+      // It will take only O(1) time because it will become
+      // either Header.Direction->Direction or stay Header.Direction
+      adjustShortcut<utils::Direction::Left>(Header.Left);
+      adjustShortcut<utils::Direction::Right>(Header.Right);
+
       splay(WhereTo);
     }
 
     ++Size;
 
-    return {{getRoot()}, true};
+    return {{Root}, true};
   }
 
   iterator erase(iterator ToErase) {
@@ -148,6 +160,14 @@ public:
     // If erased node was the root, we need also replace it
     if (getRoot() == NodeToErase) {
       assignRoot(NodeToReplace);
+    }
+
+    // Erased node could've been one (or even both) of the shortcuts
+    if (NodeToErase == getShortcut<utils::Direction::Left>()) {
+      decrementShortcut<utils::Direction::Left>();
+    }
+    if (NodeToErase == getShortcut<utils::Direction::Right>()) {
+      decrementShortcut<utils::Direction::Right>();
     }
 
     destruct(NodeToErase);
@@ -191,9 +211,11 @@ public:
     return end();
   }
 
-  iterator begin() { return {getTheLeftmostNode(this)}; }
+  iterator begin() { return {getShortcut<utils::Direction::Left>(this)}; }
   iterator end() { return {&Header}; }
-  const_iterator begin() const { return {getTheLeftmostNode(this)}; }
+  const_iterator begin() const {
+    return {getShortcut<utils::Direction::Left>(this)};
+  }
   const_iterator end() const { return {&Header}; }
 
   reverse_iterator rbegin() { return reverse_iterator(end()); }
@@ -219,6 +241,8 @@ private:
         Origin, [this](const Node &ToCopy) { return create(ToCopy); });
     if (Header.Parent) {
       Header.Parent->Parent = &Header;
+      adjustShortcut<utils::Direction::Left>(getRoot());
+      adjustShortcut<utils::Direction::Right>(getRoot());
     }
   }
 
@@ -240,12 +264,36 @@ private:
   Node *getRoot() { return Header.getRoot(); }
   void assignRoot(CompressedNode *NewRoot) { Header.Parent = NewRoot; }
 
-  template <class ThisPointer>
-  static auto *getTheLeftmostNode(ThisPointer Pointer) {
+  template <utils::Direction Which> void adjustShortcut(Node *Pivot) {
+    utils::getChild<Which>(&Header) =
+        Pivot == nullptr ? nullptr : utils::getTheOutmost<Which>(Pivot);
+  }
+
+  template <utils::Direction Which> auto *getShortcut() {
+    return getShortcut<Which>(this);
+  }
+
+  template <utils::Direction Which, class ThisPointer>
+  static auto *getShortcut(ThisPointer Pointer) {
     return Pointer->Header.Parent == nullptr
                ? &Pointer->Header
-               // TODO: change to Header.Left
-               : utils::getTheLeftmost(Pointer->Header.Parent);
+               : utils::getChild<Which>(&Pointer->Header);
+  }
+
+  template <utils::Direction Which> void decrementShortcut() {
+    auto &Shortcut = utils::getChild<Which>(&Header);
+    // if the shortcut is the left/rightmost leaf in the tree,
+    // than the next node from that order will be its successor node from
+    // the oposite direction
+    auto *TheSecondOutmostNode = utils::successor<utils::invert(Which)>(
+        static_cast<CompressedNode *>(Shortcut));
+    if (TheSecondOutmostNode == &Header) {
+      // there is no second outmost element, the shortcut should become null
+      Shortcut = nullptr;
+    } else {
+      // it couldn't be a header (it should be only one header in a tree)
+      Shortcut = TheSecondOutmostNode->getRealNode();
+    }
   }
 
   HeaderType Header{true};
