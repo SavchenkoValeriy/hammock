@@ -61,6 +61,19 @@ TEST(SplayTest, InitializationTest) {
       << "Found mismatch at " << TreeIt->first << " : " << TreeIt->second;
 }
 
+TEST(SplayTest, RepeatingInitializationTest) {
+  std::map<int, double> Standard = {{1, 12.2}, {1, 3.6}, {2, 36.6}, {2, 15.5}};
+  SplayTree<int, double> Tree = {{1, 12.2}, {1, 3.6}, {2, 36.6}, {2, 15.5}};
+
+  auto [StandardIt, TreeIt] =
+      std::mismatch(Standard.begin(), Standard.end(), Tree.begin());
+  EXPECT_EQ(StandardIt, Standard.end())
+      << "Found mismatch at " << StandardIt->first << " : "
+      << StandardIt->second;
+  EXPECT_EQ(TreeIt, Tree.end())
+      << "Found mismatch at " << TreeIt->first << " : " << TreeIt->second;
+}
+
 TEST(SplayTest, EraseTest) {
   SplayTree<int, std::string> Tree = {{1, "hello"}, {3, "world"}, {4, "!"}};
 
