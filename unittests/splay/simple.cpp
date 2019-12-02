@@ -229,3 +229,19 @@ TEST(SplayTest, ReverseIteratorTest) {
   }
   EXPECT_EQ(NumberOfVisited, Tree.size());
 }
+
+struct NonCopyable {
+  NonCopyable() = default;
+  ~NonCopyable() noexcept = default;
+
+  NonCopyable(const NonCopyable &) = delete;
+  NonCopyable &operator=(const NonCopyable &) = delete;
+
+  NonCopyable(NonCopyable &&) noexcept = default;
+  NonCopyable &operator=(NonCopyable &&) noexcept = default;
+};
+
+TEST(SplayTest, NoCopiesAllowedTest) {
+  SplayTree<int, NonCopyable> Tree;
+  Tree.insert({1, NonCopyable{}});
+}

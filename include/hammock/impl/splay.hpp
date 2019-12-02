@@ -94,42 +94,11 @@ public:
   ~SplayTree() noexcept { clear(); }
 
   std::pair<iterator, bool> insert(const KeyValuePairType &ValueToInsert) {
-    auto *Root = getRoot();
+    return insertImpl(ValueToInsert);
+  }
 
-    if (Root == nullptr) {
-      assignRoot(create(ValueToInsert));
-      Root = getRoot();
-      Root->Parent = &Header;
-      Header.Left = Root;
-      Header.Right = Root;
-
-    } else {
-
-      const auto [Parent, WhereTo] =
-          utils::find(Root, ValueToInsert.first, Comparator);
-
-      // We have a value with this key already
-      if (WhereTo)
-        return {{WhereTo}, false};
-
-      WhereTo = create(ValueToInsert);
-      WhereTo->Parent = Parent;
-
-      // The new node could've become the left/rightmost node
-      // in the tree and we need to make an adjustment to the
-      // shortcuts.
-      //
-      // It will take only O(1) time because it will become
-      // either Header.Direction->Direction or stay Header.Direction
-      adjustShortcut<utils::Direction::Left>(Header.Left);
-      adjustShortcut<utils::Direction::Right>(Header.Right);
-
-      splay(WhereTo);
-    }
-
-    ++Size;
-
-    return {{Root}, true};
+  std::pair<iterator, bool> insert(KeyValuePairType &&ValueToInsert) {
+    return insertImpl(std::move(ValueToInsert));
   }
 
   iterator erase(iterator ToErase) {
@@ -231,6 +200,46 @@ public:
   bool empty() const { return Size == 0; }
 
 private:
+  template <class ArgumentType>
+  std::pair<iterator, bool> insertImpl(ArgumentType &&ToInsert) {
+    auto *Root = getRoot();
+
+    if (Root == nullptr) {
+      assignRoot(create(std::forward<ArgumentType>(ToInsert)));
+      Root = getRoot();
+      Root->Parent = &Header;
+      Header.Left = Root;
+      Header.Right = Root;
+
+    } else {
+
+      const auto [Parent, WhereTo] =
+          utils::find(Root, ToInsert.first, Comparator);
+
+      // We have a value with this key already
+      if (WhereTo)
+        return {{WhereTo}, false};
+
+      WhereTo = create(std::forward<ArgumentType>(ToInsert));
+      WhereTo->Parent = Parent;
+
+      // The new node could've become the left/rightmost node
+      // in the tree and we need to make an adjustment to the
+      // shortcuts.
+      //
+      // It will take only O(1) time because it will become
+      // either Header.Direction->Direction or stay Header.Direction
+      adjustShortcut<utils::Direction::Left>(Header.Left);
+      adjustShortcut<utils::Direction::Right>(Header.Right);
+
+      splay(WhereTo);
+    }
+
+    ++Size;
+
+    return {{Root}, true};
+  }
+
   void splay(CompressedNode *NodeToMoveToTheTop) {
     utils::splay(NodeToMoveToTheTop);
     assignRoot(NodeToMoveToTheTop);
