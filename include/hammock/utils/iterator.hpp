@@ -23,9 +23,9 @@ public:
   using iterator_category = std::bidirectional_iterator_tag;
   using difference_type = std::ptrdiff_t;
 
-  constexpr pointer operator->() const { return &getNode()->KeyValuePair; }
+  constexpr pointer operator->() const { return &getNode()->KeyValuePair(); }
 
-  constexpr reference operator*() { return getNode()->KeyValuePair; }
+  constexpr reference operator*() { return getNode()->KeyValuePair(); }
 
   constexpr Iterator operator++() {
     CorrespondingNode = successor<Direction::Right>(CorrespondingNode);

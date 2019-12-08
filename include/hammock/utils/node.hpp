@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <type_traits>
 #include <utility>
 
 namespace hammock::utils {
@@ -54,18 +55,20 @@ struct Node : public NodeBase<Node<KeyType, ValueType>> {
   using Header = NodeBase<Node>;
   using Pair = std::pair<const KeyType, ValueType>;
 
-  Node(const Pair &ToStore) : KeyValuePair(ToStore) {}
-  Node(Pair &&ToStore) noexcept : KeyValuePair(std::move(ToStore)) {}
-  // we intentionally do not copy node's edges
-  Node(const Node &Origin) : KeyValuePair{Origin.KeyValuePair} {}
+  const KeyType &Key() const { return KeyValuePair().first; }
 
-  const KeyType &Key() const { return KeyValuePair.first; }
+  ValueType &Value() { return KeyValuePair().second; }
+  const ValueType &Value() const { return KeyValuePair().second; }
 
-  ValueType &Value() { return KeyValuePair.second; }
+  Pair *Pointer() { return std::addressof(KeyValuePair()); }
+  const Pair *Pointer() const { return std::addressof(KeyValuePair()); }
 
-  const ValueType &Value() const { return KeyValuePair.second; }
+  Pair &KeyValuePair() { return *reinterpret_cast<Pair *>(&KeyValueBuffer); }
+  const Pair &KeyValuePair() const {
+    return *reinterpret_cast<const Pair *>(&KeyValueBuffer);
+  }
 
-  Pair KeyValuePair;
+  std::aligned_storage_t<sizeof(Pair), alignof(Pair)> KeyValueBuffer;
 };
 
 } // end namespace hammock::utils

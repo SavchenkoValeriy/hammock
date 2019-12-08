@@ -1,5 +1,6 @@
 #pragma once
 
+#include "hammock/utils/inserter.hpp"
 #include "hammock/utils/iterator.hpp"
 #include "hammock/utils/node.hpp"
 #include "hammock/utils/rotation.hpp"
@@ -94,11 +95,50 @@ public:
   ~SplayTree() noexcept { clear(); }
 
   std::pair<iterator, bool> insert(const KeyValuePairType &ValueToInsert) {
-    return insertImpl(ValueToInsert);
+    return insertImpl(utils::Inserter{
+        [&ValueToInsert]() -> auto& { return ValueToInsert.first; },
+        [&ValueToInsert, this]() { return create(ValueToInsert); }
+    });
   }
 
   std::pair<iterator, bool> insert(KeyValuePairType &&ValueToInsert) {
-    return insertImpl(std::move(ValueToInsert));
+    return insertImpl(utils::Inserter{
+        [&ValueToInsert]() -> auto& { return ValueToInsert.first; },
+        [&ValueToInsert, this]() { return create(std::move(ValueToInsert)); }
+    });
+  }
+
+  template <class... ConstructorTypes>
+  std::pair<iterator, bool>
+  emplace(ConstructorTypes &&... ConstructorArguments) {
+    // With just constructor arguments we don't really know how to get the key,
+    // which is essential for finding the place to insert the new node. In this
+    // setting, we first create the node and get the key from it.
+    auto *NewNode =
+      create(std::forward<ConstructorTypes>(ConstructorArguments)...);
+    auto Result = insertImpl(utils::Inserter{
+        [NewNode]() ->auto& { return NewNode->Key(); },
+        [NewNode]() { return NewNode; }
+    });
+    // As the newly created node could've not been used (the tree already holds
+    // a value with the given key), we need not to forget to destroy the node in
+    // this particular case.
+    if (not Result.second) {
+      destruct(NewNode);
+    }
+    return Result;
+  }
+
+  template <class... ConstructorTypes>
+  std::pair<iterator, bool>
+  try_emplace(const KeyType &Key, ConstructorTypes &&... ConstructorArguments) {
+    return insertImpl(utils::Inserter{
+        [&Key]() ->auto& { return Key; },
+        [&Key, &ConstructorArguments..., this]() {
+          return create(std::piecewise_construct, std::forward_as_tuple(Key),
+                        std::forward_as_tuple(ConstructorArguments)...);
+        }
+    });
   }
 
   iterator erase(iterator ToErase) {
@@ -200,27 +240,26 @@ public:
   bool empty() const { return Size == 0; }
 
 private:
-  template <class ArgumentType>
-  std::pair<iterator, bool> insertImpl(ArgumentType &&ToInsert) {
+  template <class InserterType>
+  std::pair<iterator, bool> insertImpl(InserterType Inserter) {
     auto *Root = getRoot();
 
     if (Root == nullptr) {
-      assignRoot(create(std::forward<ArgumentType>(ToInsert)));
+      assignRoot(Inserter.getNode());
       Root = getRoot();
       Root->Parent = &Header;
       Header.Left = Root;
       Header.Right = Root;
-
     } else {
 
       const auto [Parent, WhereTo] =
-          utils::find(Root, ToInsert.first, Comparator);
+          utils::find(Root, Inserter.getKey(), Comparator);
 
       // We have a value with this key already
       if (WhereTo)
         return {{WhereTo}, false};
 
-      WhereTo = create(std::forward<ArgumentType>(ToInsert));
+      WhereTo = Inserter.getNode();
       WhereTo->Parent = Parent;
 
       // The new node could've become the left/rightmost node
@@ -246,8 +285,10 @@ private:
   }
 
   void copyTree(const HeaderType &Origin) {
-    Header = utils::copyTree(
-        Origin, [this](const Node &ToCopy) { return create(ToCopy); });
+    Header = utils::copyTree(Origin, [this](const Node &ToCopy) {
+      return create(ToCopy.KeyValuePair());
+    });
+
     if (Header.Parent) {
       Header.Parent->Parent = &Header;
       adjustShortcut<utils::Direction::Left>(getRoot());
@@ -259,8 +300,9 @@ private:
   [[nodiscard]] Node *create(ArgsTypes &&... Args) {
     auto *DataChunk =
         std::allocator_traits<NodeAllocatorType>::allocate(Allocator, 1);
+    ::new (DataChunk) Node;
     std::allocator_traits<NodeAllocatorType>::construct(
-        Allocator, DataChunk, std::forward<ArgsTypes>(Args)...);
+        Allocator, DataChunk->Pointer(), std::forward<ArgsTypes>(Args)...);
     return DataChunk;
   }
 

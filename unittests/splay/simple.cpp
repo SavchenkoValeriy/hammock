@@ -245,3 +245,29 @@ TEST(SplayTest, NoCopiesAllowedTest) {
   SplayTree<int, NonCopyable> Tree;
   Tree.insert({1, NonCopyable{}});
 }
+
+struct NonCopyableNorMovable {
+  NonCopyableNorMovable(int X) : X(X) {}
+
+  NonCopyableNorMovable(const NonCopyableNorMovable &) = delete;
+  NonCopyableNorMovable &operator=(const NonCopyableNorMovable &) = delete;
+
+  NonCopyableNorMovable(NonCopyableNorMovable &&) noexcept = default;
+  NonCopyableNorMovable &operator=(NonCopyableNorMovable &&) noexcept = default;
+
+  bool operator<(const NonCopyableNorMovable &LHS) const { return X < LHS.X; }
+
+  int X;
+};
+
+TEST(SplayTest, EmplaceTest) {
+  SplayTree<NonCopyableNorMovable, NonCopyableNorMovable> Tree;
+  Tree.emplace(10, 42);
+  Tree.emplace(10, 42);
+}
+
+TEST(SplayTest, TryEmplaceTest) {
+  SplayTree<int, NonCopyableNorMovable> Tree;
+  Tree.try_emplace(10, 42);
+  Tree.try_emplace(10, 42);
+}
