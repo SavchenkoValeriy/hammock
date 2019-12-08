@@ -92,18 +92,37 @@ find(NodeType *Node, const KeyType &Key, Compare Comparator) {
           Node != nullptr));
 
   NodeType *Parent = nullptr;
+  // Node is a local variable and Result should never maintain this value
+  // and that is why Node should not be null.
+  // We should have at least one iteration of the loop.
   NodeType **Result = &Node;
 
+  // We denote the relationship between keys provided by the comparator
+  // as the follows:
+  //   A ≺ B <=> Comparator(A, B) == true
+  //
+  // We base the search procedure on the fact that for every node N with
+  // the key P the following is always true:
+  //   * for every key K from the left subtree of N -> K ≺ P
+  //   * for every key K from the right subtree of N -> P ≺ K
+
+  // Iterate till we get to the point where there is no node
   while (*Result != nullptr) {
     Parent = *Result;
 
     if (Comparator(Parent->Key(), Key)) {
+      // If the current node's key P ≺ K, we need to go to the right subtree
       Result = &Parent->Right;
 
     } else if (Comparator(Key, Parent->Key())) {
+      // ...otherwise if K ≺ P, we should go to the left subtree
       Result = &Parent->Left;
 
     } else {
+      // ...there is only one possibilty left - P == K,
+      // which means that we found the requested node
+      //
+      // *Result holds it already, so we can simply break out of the loop
       break;
     }
   }
