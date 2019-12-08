@@ -4,7 +4,7 @@
 #include "hammock/utils/node.hpp"
 
 #include <cassert>
-#include <queue>
+#include <stack>
 #include <utility>
 
 namespace hammock::utils {
@@ -116,12 +116,12 @@ constexpr inline void preOrderTraverse(NodeType *Root, CallbackType Callback) {
       std::is_invocable_v<const CallbackType, NodeType *>,
       "traversal callback must be invocable with a node pointer argument");
 
-  // TODO: get rid of the queue, there is no need in it
-  std::queue<NodeType *> TraversalQueue;
+  // TODO: get rid of the stack, there is no need in it
+  std::stack<NodeType *> TraversalQueue;
   TraversalQueue.push(Root);
 
   while (not TraversalQueue.empty()) {
-    auto *CurrentNode = TraversalQueue.front();
+    auto *CurrentNode = TraversalQueue.top();
     TraversalQueue.pop();
 
     if (CurrentNode == nullptr)
