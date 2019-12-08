@@ -252,8 +252,8 @@ struct NonCopyableNorMovable {
   NonCopyableNorMovable(const NonCopyableNorMovable &) = delete;
   NonCopyableNorMovable &operator=(const NonCopyableNorMovable &) = delete;
 
-  NonCopyableNorMovable(NonCopyableNorMovable &&) noexcept = default;
-  NonCopyableNorMovable &operator=(NonCopyableNorMovable &&) noexcept = default;
+  NonCopyableNorMovable(NonCopyableNorMovable &&) noexcept = delete;
+  NonCopyableNorMovable &operator=(NonCopyableNorMovable &&) noexcept = delete;
 
   bool operator<(const NonCopyableNorMovable &LHS) const { return X < LHS.X; }
 
