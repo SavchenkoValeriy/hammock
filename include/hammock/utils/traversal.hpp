@@ -60,6 +60,62 @@ constexpr inline NodeType *getTheRightmost(NodeType *Node) {
   return getTheOutmost<Direction::Right>(Node);
 }
 
+/// @brief Get the left/rightmost leaf starting from the given node.
+///
+/// @tparam To  The direction for which the outmost leaf node should be
+/// retrieved.
+/// @tparam NodeType  Type of the node.
+///
+/// @param Node  The node to get the left/rightmost child leaf for.
+///
+/// @return  A pointer to the left/rightmost child leaf of the given @p Node.
+///          The result pointer can be equal to the given @p Node.
+///
+/// @pre  @p Node should not be null
+template <Direction To, class NodeType>
+constexpr inline NodeType *getTheOutmostLeaf(NodeType *Node) {
+  assert("The starting node should not be null" && Node != nullptr);
+
+  constexpr Direction From = invert(To);
+  Node = getTheOutmost<To>(Node);
+
+  for (auto *Child = getChild<From>(Node); Child != nullptr;
+       Node = getTheOutmost<To>(Child), Child = getChild<From>(Node)) {
+  }
+
+  return Node;
+}
+
+/// @brief Get the leftmost leaf starting from the given node.
+///
+/// @tparam NodeType  Type of the node.
+///
+/// @param Node  The node to get the leftmost child leaf for.
+///
+/// @return  A pointer to the leftmost child leaf of the given @p Node.
+///          The result pointer can be equal to the given @p Node.
+///
+/// @pre  @p Node should not be null
+template <Direction To, class NodeType>
+constexpr inline NodeType *getTheLeftmostLeaf(NodeType *Node) {
+  return getTheOutmostLeaf<Direction::Left>(Node);
+}
+
+/// @brief Get the rightmost leaf starting from the given node.
+///
+/// @tparam NodeType  Type of the node.
+///
+/// @param Node  The node to get the rightmost child leaf for.
+///
+/// @return  A pointer to the rightmost child leaf of the given @p Node.
+///          The result pointer can be equal to the given @p Node.
+///
+/// @pre  @p Node should not be null
+template <Direction To, class NodeType>
+constexpr inline NodeType *getTheRightmostLeaf(NodeType *Node) {
+  return getTheOutmostLeaf<Direction::Right>(Node);
+}
+
 /// @brief Test whether the given node is the left/right child.
 ///
 /// @tparam TestedDirection  The direction to check.
