@@ -55,8 +55,10 @@ constexpr inline NodeType *successor(NodeType *Node) {
   // save an additional check for that matter.
   if constexpr (To == Direction::Left) {
     if (Node->isHeader()) {
-      // TODO: change to Node->Right
-      return getTheOutmost<From>(Node->getRoot());
+      // Header's right child points to the rightmost node of the whole tree.
+      // If we want to go backwards from starting the header node, this is where
+      // we should start.
+      return Node->Right;
     }
   }
 
