@@ -9,40 +9,117 @@
 
 namespace hammock::utils {
 
+/// @brief Get the left/rightmost node starting from the given node.
+///
+/// @tparam To  The direction for which the outmost node should be retrieved.
+/// @tparam NodeType  Type of the node.
+///
+/// @param Node  The node to get the left/rightmost child for.
+///
+/// @return  A pointer to the left/rightmost child of the given @p Node.
+///          The result pointer can be equal to the given @p Node.
+///
+/// @pre  @p Node should not be null
 template <Direction To, class NodeType>
 constexpr inline NodeType *getTheOutmost(NodeType *Node) {
+  assert("The starting node should not be null" && Node != nullptr);
+
   for (auto *Child = getChild<To>(Node); Child != nullptr;
        Node = Child, Child = getChild<To>(Node)) {
   }
   return Node;
 }
 
+/// @brief Get the leftmost node starting from the given node.
+///
+/// @tparam NodeType  Type of the node.
+///
+/// @param Node  The node to get the leftmost child for.
+///
+/// @return  A pointer to the leftmost child of the given @p Node.
+///          The result pointer can be equal to the given @p Node.
+///
+/// @pre  @p Node should not be null
 template <class NodeType>
 constexpr inline NodeType *getTheLeftmost(NodeType *Node) {
   return getTheOutmost<Direction::Left>(Node);
 }
 
+/// @brief Get the rightmost node starting from the given node.
+///
+/// @tparam NodeType  Type of the node.
+///
+/// @param Node  The node to get the rightmost child for.
+///
+/// @return  A pointer to the rightmost child of the given @p Node.
+///          The result pointer can be equal to the given @p Node.
+///
+/// @pre  @p Node should not be null
 template <class NodeType>
 constexpr inline NodeType *getTheRightmost(NodeType *Node) {
   return getTheOutmost<Direction::Right>(Node);
 }
 
+/// @brief Test whether the given node is the left/right child.
+///
+/// @tparam TestedDirection  The direction to check.
+/// @tparam NodeType  Type of the node.
+///
+/// @param Node  A node to check.
+///
+/// @return  True if the given @p Node is its Parent's child from the
+///          given direction and false otherwise.
+///
+/// @pre  The node's parent should not be null, which is always true
+///       for the well-formed tree.
 template <Direction TestedDirection, class NodeType>
 constexpr inline bool isChild(NodeType *Node) {
   return getChild<TestedDirection>(Node->Parent) == Node;
 }
 
+/// @brief Return the reference to the parent's pointer to the given node.
+///
+/// @tparam NodeType  Type of the node.
+///
+/// @param Node  The node to get the location for.
+///
+/// @return  The reference to a child in the parent's node.
+///
+/// @pre  The given @p Node should not be neither the header nor the root.
+///
+/// @post  The return value casted to the pointer is equal to the given @p Node.
 template <class NodeType>
 constexpr inline auto &getParentLocation(NodeType *Node) {
+  assert("The node should not be the root node" && not Node->isRoot());
+  assert("The node should not be the header node" && not Node->isHeader());
+
   if (isChild<Direction::Right>(Node)) {
     return Node->Parent->Right;
   } else {
+    // We could've made another check and have the third branch for the case
+    // when Node->Parent->Parent == Node, but it is a pretty rare case for big
+    // trees. It is only two nodes like this in every tree and we can check that
+    // only on occasions when it is possible that we deal with special nodes.
     return Node->Parent->Left;
   }
 }
 
+/// @brief Return the inorder successor of the given node.
+///
+/// @tparam To  The direction for which the successor should be retrieved.
+/// @tparam NodeType  Type of the node.
+///
+/// @param Node  A node to retrieve the successor for.
+///
+/// @return  A pointer to the next node according to the inorder traversal.
+///          The successor of the last node is the header of the tree.
+///
+/// @pre  The given @p Node should not be null.
 template <Direction To, class NodeType>
 constexpr inline NodeType *successor(NodeType *Node) {
+  assert("Successor can be calculated only for a valid node" &&
+         Node != nullptr);
+
   constexpr Direction From = invert(To);
 
   // This case is here specifically for decrementing the end() iterator.
@@ -85,9 +162,30 @@ constexpr inline NodeType *successor(NodeType *Node) {
   return Parent;
 }
 
-template <class NodeType, class KeyType, class Compare>
+/// @brief Find the node by its key in the valid binary search tree.
+///
+/// @tparam NodeType  Type of the node.
+/// @tparam Compare  Type of the comparator function.
+///
+/// @param Node  A node to start the search from.
+/// @param Key  The key of the node (or location) to find.
+/// @param Comparator  A comparator function for keys.
+///
+/// @return  A pair, of which the first element is a pointer to the parent
+///          of the node to be found. It is always non-null. However, it is
+///          valid iff the node was not found. The second element is a reference
+///          to the node pointer. This pointer is either null if the node was
+///          not found or the actual pointer. The reference though is guaranteed
+///          to be valid and refers to the place whether the node is located or
+///          should have been located.
+///
+/// @pre  The tree rooted in the given @p Node should be a valid BST w.r.t the
+///       given @p Comparator.
+/// @pre  The given @p Node is not null.
+template <class NodeType, class Compare>
 constexpr inline std::pair<NodeType *, NodeType *&>
-find(NodeType *Node, const KeyType &Key, Compare Comparator) {
+find(NodeType *Node, const typename NodeType::KeyType &Key,
+     Compare Comparator) {
   assert(("The node to start the search from should not be null" &&
           Node != nullptr));
 
@@ -119,10 +217,10 @@ find(NodeType *Node, const KeyType &Key, Compare Comparator) {
       Result = &Parent->Left;
 
     } else {
-      // ...there is only one possibilty left - P == K,
-      // which means that we found the requested node
+      // ...there is only one possibility left - P == K,
+      // which means that we found the requested node.
       //
-      // *Result holds it already, so we can simply break out of the loop
+      // *Result holds it already, so we can simply break out of the loop.
       break;
     }
   }

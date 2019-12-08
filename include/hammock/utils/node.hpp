@@ -31,6 +31,7 @@ public:
 
   bool isHeader() const { return HeaderFlag; }
   bool isRoot() const { return Parent->isHeader(); }
+  bool isSpecial() const { return Parent->Parent == this; }
 
   Derived *getRoot() {
     assert(("Only header has a direct access to the root" && isHeader()));
@@ -50,9 +51,11 @@ private:
   bool HeaderFlag = false;
 };
 
-template <class KeyType, class ValueType>
-struct Node : public NodeBase<Node<KeyType, ValueType>> {
+template <class KeyTypeT, class ValueTypeT>
+struct Node : public NodeBase<Node<KeyTypeT, ValueTypeT>> {
   using Header = NodeBase<Node>;
+  using KeyType = KeyTypeT;
+  using ValueType = ValueTypeT;
   using Pair = std::pair<const KeyType, ValueType>;
 
   const KeyType &Key() const { return KeyValuePair().first; }
