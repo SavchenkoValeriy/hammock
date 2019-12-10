@@ -7,7 +7,9 @@
 
 namespace hammock::utils {
 
-template <class Tree, bool Const = false> class Iterator {
+template <class Tree, bool Const = false,
+          TraversalKind Order = TraversalKind::InOrder>
+class Iterator {
 public:
   using Node = AddConst<typename Tree::Node, Const>;
   using NodeBase = AddConst<typename Node::Header, Const>;
@@ -28,7 +30,7 @@ public:
   constexpr reference operator*() { return getNode()->KeyValuePair(); }
 
   constexpr Iterator operator++() {
-    CorrespondingNode = successor<Direction::Right>(CorrespondingNode);
+    CorrespondingNode = successor<Direction::Right, Order>(CorrespondingNode);
     return *this;
   }
 
@@ -39,7 +41,7 @@ public:
   }
 
   constexpr Iterator operator--() {
-    CorrespondingNode = successor<Direction::Left>(CorrespondingNode);
+    CorrespondingNode = successor<Direction::Left, Order>(CorrespondingNode);
     return *this;
   }
 

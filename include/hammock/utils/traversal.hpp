@@ -172,7 +172,7 @@ constexpr inline auto &getParentLocation(NodeType *Node) {
 ///
 /// @pre  The given @p Node should not be null.
 template <Direction To, class NodeType>
-constexpr inline NodeType *successor(NodeType *Node) {
+constexpr inline NodeType *successorInOrder(NodeType *Node) {
   assert("Successor can be calculated only for a valid node" &&
          Node != nullptr);
 
@@ -216,6 +216,83 @@ constexpr inline NodeType *successor(NodeType *Node) {
        Node = Parent, Parent = Node->Parent) {
   }
   return Parent;
+}
+
+template <Direction To, class NodeType>
+constexpr inline NodeType *successorPostOrder(NodeType *Node) {
+  assert("Successor can be calculated only for a valid node" &&
+         Node != nullptr);
+
+  constexpr Direction From = invert(To);
+
+  // This case is here specifically for decrementing the end() iterator.
+  //
+  // If we are in the header node, we should start the traversing from
+  // the very beginning, i.e. from the outmost leaf in the 'From' direction.
+  //
+  // It might be included in Direction::Right case, but we assume that
+  // incrementing the end() iterator shouldn't happen at all and we can
+  // save an additional check for that matter.
+  if constexpr (To == Direction::Left) {
+    if (Node->isHeader()) {
+      // Header's right child points to the rightmost node of the whole tree.
+      // If we want to go backwards from starting the header node, this is where
+      // we should start.
+      return getTheOutmostLeaf<From>(Node->getRoot());
+    }
+  }
+
+  // It's a post-order traversal that means that we already visited
+  // Node's left and right subtrees.
+  auto *Parent = Node->Parent;
+  if (Parent->isHeader())
+    return Parent;
+
+  // If we are coming from the 'From' sub-tree, we should try to go
+  // to the 'To' sub-tree...
+  if (isChild<From>(Node) and getChild<To>(Parent) != nullptr) {
+    return getTheOutmostLeaf<From>(getChild<To>(Parent));
+  }
+
+  // ...if there is no 'To' sub-tree or we just came from there,
+  // we have visited all of the nodes reachable from the 'Parent' node.
+  //
+  // This means that we should visit it right now.
+  return Parent;
+}
+
+template <Direction To, class NodeType>
+constexpr inline NodeType *successorPreOrder(NodeType *Node) {
+  assert("Successor can be calculated only for a valid node" &&
+         Node != nullptr);
+  // TODO: implement
+  return Node;
+}
+
+enum class TraversalKind { InOrder, PreOrder, PostOrder };
+
+/// @brief Return successor of the given node.
+///
+/// @tparam Order  Order of traversal
+///
+/// @tparam To  The direction for which the successor should be retrieved.
+/// @tparam NodeType  Type of the node.
+///
+/// @param Node  A node to retrieve the successor for.
+///
+/// @return  A pointer to the next node according to the inorder traversal.
+///          The successor of the last node is the header of the tree.
+///
+/// @pre  The given @p Node should not be null.
+template <Direction To, TraversalKind Order, class NodeType>
+constexpr inline NodeType *successor(NodeType *Node) {
+  if constexpr (Order == TraversalKind::InOrder) {
+    return successorInOrder<To>(Node);
+  } else if constexpr (Order == TraversalKind::PreOrder) {
+    return successorPreOrder<To>(Node);
+  } else {
+    return successorPostOrder<To>(Node);
+  }
 }
 
 /// @brief Find the node by its key in the valid binary search tree.

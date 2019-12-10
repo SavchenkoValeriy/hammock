@@ -336,7 +336,7 @@ private:
     // if the shortcut is the left/rightmost leaf in the tree,
     // than the next node from that order will be its successor node from
     // the oposite direction
-    auto *TheSecondOutmostNode = utils::successor<utils::invert(Which)>(
+    auto *TheSecondOutmostNode = utils::successorInOrder<utils::invert(Which)>(
         static_cast<CompressedNode *>(Shortcut));
     if (TheSecondOutmostNode == &Header) {
       // there is no second outmost element, the shortcut should become null
