@@ -271,3 +271,21 @@ TEST(SplayTest, TryEmplaceTest) {
   Tree.try_emplace(10, 42);
   Tree.try_emplace(10, 42);
 }
+
+TEST(SplayTest, PostOrderTest) {
+  SplayTree<int, int> Tree, Copy;
+  insertTypicalSequence(Tree);
+
+  EXPECT_TRUE(Copy.empty());
+
+  for (auto It = Tree.post_begin(), End = Tree.post_end(); It != End; ++It) {
+    Copy.insert(*It);
+  }
+
+  EXPECT_EQ(Copy.size(), Tree.size());
+
+  auto [CopyIt, TreeIt] = std::mismatch(Copy.begin(), Copy.end(), Tree.begin());
+
+  EXPECT_EQ(CopyIt, Copy.end());
+  EXPECT_EQ(TreeIt, Tree.end());
+}

@@ -29,6 +29,11 @@ public:
   using const_iterator = utils::Iterator<SplayTree, true>;
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
+  using post_iterator = utils::Iterator<SplayTree, false, utils::TraversalKind::PostOrder>;
+  using reverse_post_iterator = std::reverse_iterator<post_iterator>;
+  using const_post_iterator = utils::Iterator<SplayTree, true, utils::TraversalKind::PostOrder>;
+  using const_reverse_post_iterator = std::reverse_iterator<const_post_iterator>;
+
   using allocator_type = AllocatorType;
 
   static_assert(
@@ -220,6 +225,7 @@ public:
     return end();
   }
 
+  // In-order iteration
   iterator begin() { return {getShortcut<utils::Direction::Left>(this)}; }
   iterator end() { return {&Header}; }
   const_iterator begin() const {
@@ -234,6 +240,31 @@ public:
   }
   const_reverse_iterator rend() const {
     return const_reverse_iterator(begin());
+  }
+
+  // Post-order iteration
+  post_iterator post_begin() {
+    return {utils::getTheOutmostLeaf<utils::Direction::Left>(
+        getShortcut<utils::Direction::Left>(this))};
+  }
+  post_iterator post_end() { return {&Header}; }
+  const_post_iterator post_begin() const {
+    return {utils::getTheOutmostLeaf<utils::Direction::Left>(
+        getShortcut<utils::Direction::Left>(this))};
+  }
+  const_post_iterator post_end() const { return {&Header}; }
+
+  reverse_post_iterator post_rbegin() {
+    return reverse_post_iterator(post_end());
+  }
+  reverse_post_iterator post_rend() {
+    return reverse_post_iterator(post_begin());
+  }
+  const_reverse_post_iterator post_rbegin() const {
+    return const_reverse_post_iterator(post_end());
+  }
+  const_reverse_post_iterator post_rend() const {
+    return const_reverse_post_iterator(post_begin());
   }
 
   std::size_t size() const { return Size; }
