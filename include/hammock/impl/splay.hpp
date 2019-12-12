@@ -191,9 +191,12 @@ public:
   }
 
   void clear() noexcept {
-    utils::preOrderTraverse(getRoot(),
-                            [this](Node *ToDelete) { destruct(ToDelete); });
+    for (auto It = post_begin(), End = post_end(); It != End;
+         destruct((It++).getNode())) {
+    }
     assignRoot(nullptr);
+    adjustShortcut<utils::Direction::Left>(nullptr);
+    adjustShortcut<utils::Direction::Right>(nullptr);
     Size = 0;
   }
 

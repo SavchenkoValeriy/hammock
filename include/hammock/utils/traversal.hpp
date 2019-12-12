@@ -360,29 +360,6 @@ find(NodeType *Node, const typename NodeType::KeyType &Key,
   return {Parent, *Result};
 }
 
-template <class NodeType, class CallbackType>
-constexpr inline void preOrderTraverse(NodeType *Root, CallbackType Callback) {
-  static_assert(
-      std::is_invocable_v<const CallbackType, NodeType *>,
-      "traversal callback must be invocable with a node pointer argument");
-
-  // TODO: get rid of the stack, there is no need in it
-  std::stack<NodeType *> TraversalQueue;
-  TraversalQueue.push(Root);
-
-  while (not TraversalQueue.empty()) {
-    auto *CurrentNode = TraversalQueue.top();
-    TraversalQueue.pop();
-
-    if (CurrentNode == nullptr)
-      continue;
-    TraversalQueue.push(CurrentNode->Left);
-    TraversalQueue.push(CurrentNode->Right);
-
-    Callback(CurrentNode);
-  }
-}
-
 template <Direction To, class NodeType>
 constexpr inline bool shouldGo(const NodeType *Origin, const NodeType *Copy) {
   return getChild<To>(Origin) != nullptr and getChild<To>(Copy) == nullptr;
