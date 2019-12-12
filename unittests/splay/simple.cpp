@@ -289,3 +289,21 @@ TEST(SplayTest, PostOrderTest) {
   EXPECT_EQ(CopyIt, Copy.end());
   EXPECT_EQ(TreeIt, Tree.end());
 }
+
+TEST(SplayTest, PreOrderTest) {
+  SplayTree<int, int> Tree, Copy;
+  insertTypicalSequence(Tree);
+
+  EXPECT_TRUE(Copy.empty());
+
+  for (auto It = Tree.pre_begin(), End = Tree.pre_end(); It != End; ++It) {
+    Copy.insert(*It);
+  }
+
+  EXPECT_EQ(Copy.size(), Tree.size());
+
+  auto [CopyIt, TreeIt] = std::mismatch(Copy.begin(), Copy.end(), Tree.begin());
+
+  EXPECT_EQ(CopyIt, Copy.end());
+  EXPECT_EQ(TreeIt, Tree.end());
+}

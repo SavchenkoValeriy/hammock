@@ -218,6 +218,17 @@ constexpr inline NodeType *successorInOrder(NodeType *Node) {
   return Parent;
 }
 
+/// @brief Return the postorder successor of the given node.
+///
+/// @tparam To  The direction for which the successor should be retrieved.
+/// @tparam NodeType  Type of the node.
+///
+/// @param Node  A node to retrieve the successor for.
+///
+/// @return  A pointer to the next node according to the postorder traversal.
+///          The successor of the last node is the header of the tree.
+///
+/// @pre  @p Node should not be null.
 template <Direction To, class NodeType>
 constexpr inline NodeType *successorPostOrder(NodeType *Node) {
   assert("Successor can be calculated only for a valid node" &&
@@ -235,9 +246,7 @@ constexpr inline NodeType *successorPostOrder(NodeType *Node) {
   // save an additional check for that matter.
   if constexpr (To == Direction::Left) {
     if (Node->isHeader()) {
-      // Header's right child points to the rightmost node of the whole tree.
-      // If we want to go backwards from starting the header node, this is where
-      // we should start.
+      // We need to start over from the outmost leaf of the whole tree
       return getTheOutmostLeaf<From>(Node->getRoot());
     }
   }
@@ -261,11 +270,65 @@ constexpr inline NodeType *successorPostOrder(NodeType *Node) {
   return Parent;
 }
 
+/// @brief Return the preorder successor of the given node.
+///
+/// @tparam To  The direction for which the successor should be retrieved.
+/// @tparam NodeType  Type of the node.
+///
+/// @param Node  A node to retrieve the successor for.
+///
+/// @return  A pointer to the next node according to the preorder traversal.
+///          The successor of the last node is the header of the tree.
+///
+/// @pre  @p Node should not be null.
 template <Direction To, class NodeType>
 constexpr inline NodeType *successorPreOrder(NodeType *Node) {
   assert("Successor can be calculated only for a valid node" &&
          Node != nullptr);
-  // TODO: implement
+
+  constexpr Direction From = invert(To);
+
+  // This case is here specifically for decrementing the end() iterator.
+  //
+  // If we are in the header node, we should start the traversing from
+  // the very beginning, i.e. from the outmost leaf in the 'From' direction.
+  //
+  // It might be included in Direction::Right case, but we assume that
+  // incrementing the end() iterator shouldn't happen at all and we can
+  // save an additional check for that matter.
+  if constexpr (To == Direction::Left) {
+    if (Node->isHeader()) {
+      // Starting a new traversal from root node
+      return Node->getRoot();
+    }
+  }
+
+  // If we can go to the From direction - do it!
+  if (getChild<From>(Node) != nullptr) {
+    return getChild<From>(Node);
+  }
+
+  // At this point, we either should go to the 'To' child (if we have one),
+  // or start walking back up.
+  //
+  // All the parents of this node, though, have been visited already and the
+  // only possibility left is to go from the parent node to the 'To' child as
+  // well (if we didn't not come from it, of course).
+  //
+  // These cases can be united in the following algorithm:
+  //   Try to go to the 'To' child if we didn't visit all the subtree of this
+  //   node already. If we couldn't or we did visit it, try further up.
+  //   We start with the current node and the fact that we didn't visit all of
+  //   the child nodes. When we go up, we think that we are done with the
+  //   subtree if we came from the 'To' child.
+  for (bool VisitTheWholeSubTree = false; not Node->isHeader();
+       VisitTheWholeSubTree = isChild<To>(Node), Node = Node->Parent) {
+    if (not VisitTheWholeSubTree and getChild<To>(Node) != nullptr) {
+      return getChild<To>(Node);
+    }
+  }
+
+  // Didn't find any nodes to go further - simply return the header (the end).
   return Node;
 }
 
@@ -283,7 +346,7 @@ enum class TraversalKind { InOrder, PreOrder, PostOrder };
 /// @return  A pointer to the next node according to the inorder traversal.
 ///          The successor of the last node is the header of the tree.
 ///
-/// @pre  The given @p Node should not be null.
+/// @pre  @p Node should not be null.
 template <Direction To, TraversalKind Order, class NodeType>
 constexpr inline NodeType *successor(NodeType *Node) {
   if constexpr (Order == TraversalKind::InOrder) {

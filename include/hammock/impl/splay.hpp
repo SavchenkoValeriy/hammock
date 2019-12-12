@@ -29,10 +29,20 @@ public:
   using const_iterator = utils::Iterator<SplayTree, true>;
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-  using post_iterator = utils::Iterator<SplayTree, false, utils::TraversalKind::PostOrder>;
+  using post_iterator =
+      utils::Iterator<SplayTree, false, utils::TraversalKind::PostOrder>;
   using reverse_post_iterator = std::reverse_iterator<post_iterator>;
-  using const_post_iterator = utils::Iterator<SplayTree, true, utils::TraversalKind::PostOrder>;
-  using const_reverse_post_iterator = std::reverse_iterator<const_post_iterator>;
+  using const_post_iterator =
+      utils::Iterator<SplayTree, true, utils::TraversalKind::PostOrder>;
+  using const_reverse_post_iterator =
+      std::reverse_iterator<const_post_iterator>;
+
+  using pre_iterator =
+      utils::Iterator<SplayTree, false, utils::TraversalKind::PreOrder>;
+  using reverse_pre_iterator = std::reverse_iterator<pre_iterator>;
+  using const_pre_iterator =
+      utils::Iterator<SplayTree, true, utils::TraversalKind::PreOrder>;
+  using const_reverse_pre_iterator = std::reverse_iterator<const_pre_iterator>;
 
   using allocator_type = AllocatorType;
 
@@ -268,6 +278,23 @@ public:
   }
   const_reverse_post_iterator post_rend() const {
     return const_reverse_post_iterator(post_begin());
+  }
+
+  // Pre-order iteration
+  pre_iterator pre_begin() { return {getRoot() ? getRoot() : &Header}; }
+  pre_iterator pre_end() { return {&Header}; }
+  const_pre_iterator pre_begin() const {
+    return {getRoot() ? getRoot() : &Header};
+  }
+  const_pre_iterator pre_end() const { return {&Header}; }
+
+  reverse_pre_iterator pre_rbegin() { return reverse_pre_iterator(pre_end()); }
+  reverse_pre_iterator pre_rend() { return reverse_pre_iterator(pre_begin()); }
+  const_reverse_pre_iterator pre_rbegin() const {
+    return const_reverse_pre_iterator(pre_end());
+  }
+  const_reverse_pre_iterator pre_rend() const {
+    return const_reverse_pre_iterator(pre_begin());
   }
 
   std::size_t size() const { return Size; }
