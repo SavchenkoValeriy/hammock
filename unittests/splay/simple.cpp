@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <iterator>
+#include <limits.h>
 
 using namespace hammock::impl;
 
