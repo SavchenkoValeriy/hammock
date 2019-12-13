@@ -423,42 +423,110 @@ find(NodeType *Node, const typename NodeType::KeyType &Key,
   return {Parent, *Result};
 }
 
+/// @brief Check if we should go in the given direction for copying.
+///
+/// @param Origin  A node from the original tree.
+/// @param Copy  A corresponding node from the copied tree.
+///
+/// @tparam To  A direction to check.
+/// @tparam NodeType  Type of the node.
+///
+/// @return  true if we should visit the given direction for the purpose of
+///          copying and false otherwise
+///
+/// @pre  @p Origin is not null
+/// @pre  @p Copy is not null
+///
+/// @note  This function makes sense only in the context of the @ref copyTree
+///        function.
 template <Direction To, class NodeType>
 constexpr inline bool shouldGo(const NodeType *Origin, const NodeType *Copy) {
+  // We should go in this direction if the original node has a child here,
+  // while the copy still doesn't
   return getChild<To>(Origin) != nullptr and getChild<To>(Copy) == nullptr;
 }
 
+/// @brief Copy the child from the given direction and move in this direction.
+///
+/// @param Origin  A node from the original tree.
+/// @param Copy  A corresponding node from the copied tree.
+/// @param Create  A function that copies the given node and creates a new node.
+///
+/// @tparam To  A direction to copy the child from and to go.n
+/// @tparam NodeType  Type of the node.
+/// @tparam CallbackType  Type of the @p Create function.
+///
+/// @pre  @p Origin is not null
+/// @pre  @p getChild<To>(Origin) is not null
+/// @pre  @p Copy is not null
+/// @pre  @tp NodeType is copyable
+///
+/// @note  This function makes sense only in the context of the @ref copyTree
+///        function.
 template <Direction To, class NodeType, class CallbackType>
 constexpr inline void copyAndGo(const NodeType *&Origin, NodeType *&Copy,
                                 CallbackType Create) {
+  // Copy the node first
   getChild<To>(Copy) = Create(*getChild<To>(Origin));
   getChild<To>(Copy)->Parent = Copy;
+  // And go in that direction with both trees
   Origin = getChild<To>(Origin);
   Copy = getChild<To>(Copy);
 }
 
+/// @brief Copy the given tree.
+///
+/// @param OriginalHeader  A header node of the original tree.
+/// @param Create  A function that copies the given node and creates a new node.
+///
+/// @tparam NodeType  Type of the node.
+/// @tparam CallbackType  Type of the @p Create function.
+///
+/// @return  A header node of the copied tree.
+///
+/// @pre  @tp NodeType is copyable
+///
+/// @note  This function does NOT copy left/right pointers of the header node
+///        so it is the caller's responsibility to fix them after the copying.
 template <class NodeType, class CallbackType>
 constexpr inline NodeBase<NodeType>
 copyTree(const NodeBase<NodeType> &OriginalHeader, CallbackType Create) {
+  using Base = NodeBase<NodeType>;
   const auto *OriginRoot = OriginalHeader.getRoot();
 
+  // It looks like we are copying an empty tree
   if (OriginRoot == nullptr) {
-    return {};
+    return {true};
   }
 
-  auto NewHeader = NodeBase<NodeType>{true};
-  NodeBase<NodeType> *Copy = Create(*OriginRoot);
-  const NodeBase<NodeType> *Origin = OriginRoot;
+  auto NewHeader = Base{true};
+  Base *Copy = Create(*OriginRoot);
+  // In order for us to traverse the tree up and down without additional
+  // conversions, we should do it with a pointer to the base class of the node.
+  const Base *Origin = OriginRoot;
   NewHeader.Parent = Copy;
 
+  // The main idea of the following algorithm is to traverse the tree with two
+  // pointers at once. We want to copy children of the node only after we copy
+  // the node itself. For this reason, pre-order traversal is the best fit.
+  //
+  // We don't use a standard pre-order traversal (@ref successorPreOrder)
+  // because we need repeat all of the transitions for the copying pointer as
+  // well.
+  //
+  // We should stop if we got back to the header node.
   while (not Origin->isHeader()) {
+    // Try to copy the left sub-tree...
     if (shouldGo<Direction::Left>(Origin, Copy)) {
       copyAndGo<Direction::Left>(Origin, Copy, Create);
 
     } else if (shouldGo<Direction::Right>(Origin, Copy)) {
+      // ...or the right sub-tree if the left one is already copied.
       copyAndGo<Direction::Right>(Origin, Copy, Create);
 
     } else {
+      // Otherwise it looks like all the children of the node are copied and
+      // we should walk the tree further up.
       Origin = Origin->Parent;
       Copy = Copy->Parent;
     }
