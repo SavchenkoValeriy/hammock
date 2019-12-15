@@ -24,8 +24,12 @@ set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-point
 enable_testing()
 find_package(GTest REQUIRED)
 find_package(Threads REQUIRED)
+
+find_package(benchmark REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 include_directories(${HAMMOCK_INCLUDE_DIRS})
 
 # All unit-tests are in 'unittests'
 add_subdirectory(unittests)
+
+add_subdirectory(benchmarks)

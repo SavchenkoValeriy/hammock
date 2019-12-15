@@ -11,7 +11,7 @@ function(add_unittest test_suite test_name)
   target_link_libraries(${test_name} PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 
   target_include_directories(${test_name} PUBLIC
-    "${CMAKE_SOURCE_DIR}/unittests/utils/include")
+    "${CMAKE_SOURCE_DIR}/unittests/framework/include")
 
   add_test(${test_name} ${test_name})
   add_dependencies(${test_suite} ${test_name})
